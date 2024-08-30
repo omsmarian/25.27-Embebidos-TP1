@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     gpio.h
   @brief    Simple GPIO Pin services, similar to Arduino
-  @author   Nicolás Magliola
+  @author   Grupo 4
  ******************************************************************************/
 
 #ifndef _GPIO_H_
@@ -69,10 +69,10 @@ typedef enum
 
 typedef enum
 {
-	PORT_eDisabled				= 0x00,
-	PORT_eDMARising				= 0x01,
-	PORT_eDMAFalling			= 0x02,
-	PORT_eDMAEither				= 0x03,
+	PORT_eDisabled			= 0x00,
+	PORT_eDMARising			= 0x01,
+	PORT_eDMAFalling		= 0x02,
+	PORT_eDMAEither			= 0x03,
 	PORT_eInterruptDisasserted	= 0x08,
 	PORT_eInterruptRising		= 0x09,
 	PORT_eInterruptFalling		= 0x0A,
@@ -118,8 +118,8 @@ void gpioMode (pin_t pin, uint8_t mode);
  * @param irqFun function to call on pin event
  * @return Registration succeed
  */
-//bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun);
-bool gpioIRQ (pin_t pin, uint8_t irqMode);
+bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun);
+// bool gpioIRQ (pin_t pin, uint8_t irqMode);
 
 /**
  * @brief Write a HIGH or a LOW value to a digital pin
