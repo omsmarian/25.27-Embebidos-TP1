@@ -35,17 +35,6 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-// typedef struct {
-//     uint8_t bit0_A : 1;
-//     uint8_t bit1_A : 1;
-//     uint8_t bit2_A : 1;
-//     uint8_t bit3_A : 1;
-//     uint8_t bit0_B : 1;
-//     uint8_t bit1_B : 1;
-//     uint8_t bit2_B : 1;
-//     uint8_t bit3_B : 1;
-// } MagCardData_t;
-
 typedef struct {
     char PAN [19];
     uint8_t PAN_length;
@@ -101,27 +90,30 @@ static void ParseData (void);
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// uint32_t data[5] = { 0 };
-// uint8_t parity[5] = { 0 };
-// MagCardData_t magCardData[20] = { 0 };
+static const MagCard_t empty_data = { { { 0 }, 0 }, { { 0 }, { 0 } }, { 0,{ 0 }, { 0 } }, 0 };
+
 static char buffer = 0;
 static char data[40] = { 0 }; // buffer?
 static bool parity[40] = { 0 };
 static bool track_buffer[200] = { 0 };
 static uint8_t index = 1;
+
+static bool init_flag = 0;
+
 static bool flag_enable = false;
 static bool flag_ss = false;
 static bool flag_fs = false;
 static bool flag_es = false;
 static bool flag_invalid = false;
-static const MagCard_t invalid_data = { { { 0 }, 0 }, { {0}, {0} }, {0, { 0 }, { 0 }}, 0 };
-static MagCard_t magCard;
-static MagCardState_t state = IDLE;
 static uint8_t ss_pos = 0;
 static uint8_t fs_pos = 0;
 static uint8_t es_pos = 0;
 
+static MagCard_t magCard;
+static MagCardState_t state = IDLE;
+
 // Reset function?
+// Initialization function or here?
 // Multiple function calls? Inits?
 
 
@@ -139,9 +131,14 @@ bool MagCardInit (void)
     gpioMode(PIN_MAGCARD_CLOCK, INPUT);
     gpioMode(PIN_MAGCARD_DATA, INPUT);
 
-    magCard = invalid_data;
+    if (init_flag == true) // Already initialized
+        status = false;
 
-    status = gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable);
+    if (status)
+        magCard = empty_data;
+
+    if (status)
+        status = gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable);
     if (status)
         status = gpioIRQ(PIN_MAGCARD_CLOCK, GPIO_IRQ_MODE_FALLING_EDGE, ReadBit);
 
@@ -173,24 +170,28 @@ static void FSM (void)
             if (flag_enable)
                 state = READ;
             break;
+
         case READ:
             if (flag_enable)
                 state = READ;
             else
                 state = PARSE;
             break;
+
         case PARSE:
             if (flag_invalid)
                 state = INVALID;
             else
                 state = IDLE;
             break;
+
         case INVALID:
             if (flag_enable)
                 state = READ;
             else
                 state = INVALID;
             break;
+
         default:
             state = IDLE;
             break;
@@ -238,93 +239,34 @@ static void ReadData (void)
 
 static void ParseData (void)
 {
-    if (!flag_invalid)
-    {
-        // uint8_t stop = MAX_FS_POS + 1; // Current stop position to read each field
-        // magCard.data.PAN_length = 0;
-        uint8_t i = 4; // Skip Start Sentinel
-        // while (data[i] != FIELD_SEPARATOR && i < stop) // Is it necessary or can i just use the LRC?
-        for(uint8_t i = ss_pos + 1; i < fs_pos + 1; i++)
-        {
-            magCard.data.PAN[i] = data[i++];
-            magCard.data.PAN_length++;
-        }
-        // for (uint8_t i = 0; i < 19 && data[i] != FIELD_SEPARATOR; i++)
-        // {
-        //     magCard.data.PAN[i] = data[i];
-        //     magCard.data.PAN_length++;
-        // }
-        // if (i != stop)
-        // {
-        // stop += 
-        for (i++; i < 4; i++)
-            magCard.additional_data.expiration[i] = data[i];
-        for (uint8_t i = 0; i < 3; i++)
-            magCard.additional_data.service_code[i] = 0;
-        magCard.discretionary_data.PVKI = 0;
-        for (uint8_t i = 0; i < 4; i++)
-            magCard.discretionary_data.PVV[i] = 0;
-        for (uint8_t i = 0; i < 3; i++)
-            magCard.discretionary_data.CVV[i] = 0;
-        magCard.LRC = 0;
-        // }
-        // else
-            // magCard = invalid_data;
-    }
+    magCard.data.PAN_length = fs_pos - ss_pos;
+    uint8_t i = 4; // Skip Start Sentinel
+    // while (data[i] != FIELD_SEPARATOR && i < stop) // Is it necessary or can i just use the LRC?
+
+    uint8_t i = ss_pos + 1;
+
+    for (; i < fs_pos; i++)
+        magCard.data.PAN[i] = data[i];
+
+    for (i++; i < fs_pos + 4; i++) // Make it clearer
+        magCard.additional_data.expiration[i] = data[i];
+
+    for (; i < fs_pos + 7; i++)
+        magCard.additional_data.service_code[i] = data[i];
+
+    for (; i < fs_pos + 8; i++)
+        magCard.discretionary_data.PVKI = data[i];
+    
+    for (; i < fs_pos + 12; i++)
+        magCard.discretionary_data.PVV[i] = data[i];
+    
+    for (; i < fs_pos + 15; i++)
+        magCard.discretionary_data.CVV[i] = data[i];
+
+    magCard.LRC = data[++i];
 }
 
-// // redo to avoid division!
-// static void ReadData (void)
-// {
-//     if (flag_enable && !flag_invalid)
-//     {
-//         if (index % 5)
-//             buffer |= gpioRead(PIN_MAGCARD_DATA) << (index % 5);
-//         else
-//         {
-//             data[index / 5] = buffer;
-//             parity[index / 5] = gpioRead(PIN_MAGCARD_DATA);
-//         }
-//         // index++ %= 40;
-//         index++;
-
-//         if (index == 40)
-//             index = 1;
-
-//         if (index == 6 && data[0] == 0xB)
-//             flag_ss = true;
-//         else
-//             flag_invalid = true;
-//         // else if (index == 40 && flag_start)
-//         // {
-//         //     // Check Parity
-//         //     uint8_t i = 0;
-//         //     for (i = 0; i < 40; i++)
-//         //     {
-//         //         if (parity[i] != (data[i] & 0x01))
-//         //             break;
-//         //     }
-
-//         //     if (i == 40)
-//         //     {
-//         //         // Send Data
-//         //         for (i = 0; i < 40; i++)
-//         //             data[i] >>= 1;
-//         //     }
-//         // }
-//     }
-//     // TODO: check flags, use separators and not indexes (may be <19), check parity, raise flags to be checked in App with timers, ...
-// }
-
-// static char ReadChar (uint8_t bits) // 4 bits to char
-// {
-//     char c = 0;
-//     for (uint8_t i = 0; i < 8; i++)
-//     {
-//         c |= gpioRead(PIN_MAGCARD_DATA) << i;
-//     }
-//     return c;
-// }
+// TODO: check flags, use separators and not indexes (may be <19), check parity, raise flags to be checked in App with timers, ...
 
 
 /******************************************************************************/
