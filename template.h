@@ -1,63 +1,51 @@
 /***************************************************************************//**
-  @file     App.c
-  @brief    Application functions
-  @author   Grupo 4
+  @file     +Nombre del archivo (ej: template.h)+
+  @brief    +Descripcion del archivo+
+  @author   +Nombre del autor (ej: Salvador Allende)+
  ******************************************************************************/
+
+#ifndef _TEMPLATE_H_
+#define _TEMPLATE_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "board.h"
-#include "gpio.h"
-#include "hardware.h"
-#include "SysTick.h"
-#include "magcard.h"
-//#include "fsl_debug_console.h"
+
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
 
+
 /*******************************************************************************
- * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 
+
 /*******************************************************************************
- *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
- *******************************************************************************
+ * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-/* Función que se llama 1 vez, al comienzo del programa */
-void App_Init(void) {
-//  printf("%d", MagCardInit());
-	bool a = MagCardInit();
-}
-
-/* Función que se llama constantemente en un ciclo infinito */
-void App_Run(void) {
-//  printf("%d", MagCardCheckData());
-//  printf("%d", MagCardGetData());
-	bool b = MagCardCheckData();
-	MagCard_t c = MagCardGetData();
-	if(1)
-	{}
-	if (c.valid)
-	{
-		b = 1;
-	}
-}
+// +ej: extern unsigned int anio_actual;+
 
 
 /*******************************************************************************
- *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
- *******************************************************************************
+ * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
+
+/**
+ * @brief TODO: completar descripcion
+ * @param param1 Descripcion parametro 1
+ * @param param2 Descripcion parametro 2
+ * @return Descripcion valor que devuelve
+*/
+// +ej: char lcd_goto (int fil, int col);+
 
 
 /*******************************************************************************
  ******************************************************************************/
+
+#endif // _TEMPLATE_H_
