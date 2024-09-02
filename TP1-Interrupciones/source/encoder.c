@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     encoder.c
   @brief    Encoder driver
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
@@ -10,8 +10,8 @@
 
 #include "encoder.h"
 #include "board.h"
-#include "timer.h"
-#include <stdbool.h>
+#include "gpio.h"
+//#include "timer.h"
 
 
 /*******************************************************************************
@@ -25,19 +25,19 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-// typedef enum
-// {
-//     None,
-// 	RCHA,
-// 	RCHB,
-// } EncoderNegEdge_t;
-
-// typedef enum
-// {
-//     None,
-// 	Right,
-// 	Left,
-// } EncoderTurnDir_t;
+//typedef enum
+//{
+//	None,
+//	RCHA,
+//	RCHB,
+//} EncoderNegEdge_t;
+//
+//typedef enum
+//{
+//	None,
+//	Right,
+//	Left,
+//} EncoderTurnDir_t;
 
 
 /*******************************************************************************
@@ -48,10 +48,10 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// /**
-//  * @brief Periodic service
-//  */
-// static void encoder_isr(void);
+///**
+// * @brief Periodic service
+// */
+//static void encoder_isr(void);
 
 
 /*******************************************************************************
@@ -76,30 +76,30 @@
  *******************************************************************************
  ******************************************************************************/
 
-// bool encoderInit(void) {
-//     gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
-//     gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
-//     gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
-
-//     timerInit();
-//     timerStart(timerGetId(), TIMER_MS2TICKS(10), TIM_MODE_PERIODIC, encoder_isr);
-
-//     return 0;
-// }
-
-// EncoderTurnDir_t encoderRead(void) {
-//     return flag_turn;
-// }
-
-// void encoderReset(void) {
-//     flag_switch = 0;
-//     flag_turn_right = 0;
-//     flag_turn_left = 0;
-// }
-
-// bool encoderSet(void) {
-//     return 0;
-// }
+//bool encoderInit(void) {
+//	gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
+//	gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
+//    gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
+//
+//    timerInit();
+//    timerStart(timerGetId(), TIMER_MS2TICKS(10), TIM_MODE_PERIODIC, encoder_isr);
+//
+//    return 0;
+//}
+//
+//EncoderTurnDir_t encoderRead(void) {
+//	return flag_turn;
+//}
+//
+//void encoderReset(void) {
+//	flag_switch = 0;
+//	flag_turn_right = 0;
+//	flag_turn_left = 0;
+//}
+//
+//bool encoderSet(void) {
+//	return 0;
+//}
 
 
 /*******************************************************************************
@@ -108,35 +108,35 @@
  *******************************************************************************
  ******************************************************************************/
 
-// static void encoder_isr(void) {
-//     if(gpioRead(PIN_ENCODER_RSWITCH) == 0) { // Falta el debounce
-//         flag_switch = 1;
-//     }
-//     // else {
-//     //     flag_switch = 0;
-//     // }
-//     switch (flag_first)
-//     {
-//     case None:
-//         flag_turn_right = 0;
-//         flag_turn_left = 0;
-//         break;
-
-//     case RCHA:
-//         if (gpioRead(PIN_ENCODER_RCHB))
-//             flag_turn_right = 1;
-//             flag_turn_left = 0;
-//             flag_first = NONE;
-//         break;
-
-//     case RCHB:
-//         if (gpioRead(PIN_ENCODER_RCHA))
-//             flag_turn_right = 0;
-//             flag_turn_left = 1;
-//             flag_first = NONE;
-//         break;
-//     }
-// }
+//static void encoder_isr(void) {
+//	if(gpioRead(PIN_ENCODER_RSWITCH) == 0) { // No debounce
+//		flag_switch = 1;
+//	}
+//	// else {
+//	//     flag_switch = 0;
+//	// }
+//	switch (flag_first)
+//	{
+//	case None:
+//		flag_turn_right = 0;
+//		flag_turn_left = 0;
+//		break;
+//
+//	case RCHA:
+//		if (gpioRead(PIN_ENCODER_RCHB))
+//			flag_turn_right = 1;
+//			flag_turn_left = 0;
+//			flag_first = NONE;
+//		break;
+//
+//	case RCHB:
+//		if (gpioRead(PIN_ENCODER_RCHA))
+//			flag_turn_right = 0;
+//			flag_turn_left = 1;
+//			flag_first = NONE;
+//		break;
+//	}
+//}
 
 
 /******************************************************************************/

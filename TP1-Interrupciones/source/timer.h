@@ -41,10 +41,6 @@ typedef void (*tim_callback_t)(void);
 
 
 /*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
-
-/*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
@@ -53,15 +49,13 @@ typedef void (*tim_callback_t)(void);
  */
 void timerInit(void);
 
-
-// Non-Blocking services ////////////////////////////////////////////////
+// Non-Blocking services ///////////////////////////////////////////////////////
 
 /**
  * @brief Request a timer
  * @return ID of the timer to use
  */
 tim_id_t timerGetId(void);
-
 
 /**
  * @brief Begin to run a new timer
@@ -72,13 +66,11 @@ tim_id_t timerGetId(void);
  */
 void timerStart(tim_id_t id, ttick_t ticks, uint8_t mode, tim_callback_t callback);
 
-
 /**
  * @brief Finish to run a timer
  * @param id ID of the timer to stop
  */
 void timerStop(tim_id_t id);
-
 
 /**
  * @brief Verify if a timer has run timeout
@@ -87,8 +79,7 @@ void timerStop(tim_id_t id);
  */
 bool timerExpired(tim_id_t id);
 
-
-// Blocking services ////////////////////////////////////////////////
+// Blocking services ///////////////////////////////////////////////////////////
 
 /**
  * @brief Wait the specified time. Use internal timer

@@ -1,15 +1,23 @@
-/*
- * gpio.c
- *
- *  Created on: 12 ago. 2024
- *      Author: Valentin U. Vieira
- */
+/***************************************************************************//**
+  @file     gpio.h
+  @brief    Simple GPIO Pin services, similar to Arduino
+  @author   Group 4
+ ******************************************************************************/
+
+/*******************************************************************************
+ * INCLUDE HEADER FILES
+ ******************************************************************************/
 
 #include <stdio.h>
 #include "gpio.h"
 #include "board.h"
 #include "hardware.h"
 #include "MK64F12.h"
+
+
+/*******************************************************************************
+ * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
+ ******************************************************************************/
 
 #define BITGET(x,n) 		((x) & (1<<(n)))
 #define BITSET(x,n) 		((x) |= (1<<(n)))
@@ -30,30 +38,56 @@
 #define BITINS(x,m,n,y) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((y) << (n))))
 #define BITEXT(x,m,n) 		((x) >> (n) & ((1 << ((m) - (n) + 1)) - 1))
 #define BITEXTVAL(x,m,n,v) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((v) << (n))))
-#define BITCNT(x) 		((x) & 1 + BITCNT((x) >> 1))
-#define BITREV(x) 		((x) = (((x) & 0x55555555) << 1) | (((x) & 0xAAAAAAAA) >> 1))
-#define BITSWP2(x) 		((x) = ((x) & 0x33333333) << 2 | ((x) & 0xCCCCCCCC) >> 2)
-#define BITSWP4(x) 		((x) = ((x) & 0x0F0F0F0F) << 4 | ((x) & 0xF0F0F0F0) >> 4)
-#define BITSWP8(x) 		((x) = ((x) & 0x00FF00FF) << 8 | ((x) & 0xFF00FF00) >> 8)
+#define BITCNT(x) 			((x) & 1 + BITCNT((x) >> 1))
+#define BITREV(x) 			((x) = (((x) & 0x55555555) << 1) | (((x) & 0xAAAAAAAA) >> 1))
+#define BITSWP2(x) 			((x) = ((x) & 0x33333333) << 2 | ((x) & 0xCCCCCCCC) >> 2)
+#define BITSWP4(x) 			((x) = ((x) & 0x0F0F0F0F) << 4 | ((x) & 0xF0F0F0F0) >> 4)
+#define BITSWP8(x) 			((x) = ((x) & 0x00FF00FF) << 8 | ((x) & 0xFF00FF00) >> 8)
 #define BITSWP16(x) 		((x) = ((x) & 0x0000FFFF) << 16 | ((x) & 0xFFFF0000) >> 16)
-#define BITPAR(x) 		((x) = ((x) & 0x55555555) + (((x) >> 1) & 0x55555555), \
-		   		(x) = ((x) & 0x33333333) + (((x) >> 2) & 0x33333333), \
-		   		(x) = ((x) & 0x0F0F0F0F) + (((x) >> 4) & 0x0F0F0F0F), \
-		   		(x) = ((x) & 0x00FF00FF) + (((x) >> 8) & 0x00FF00FF), \
-		   		(x) = ((x) & 0x0000FFFF) + (((x) >> 16) & 0x0000FFFF))
+#define BITPAR(x) 			((x) = ((x) & 0x55555555) + (((x) >> 1) & 0x55555555), \
+		   					 (x) = ((x) & 0x33333333) + (((x) >> 2) & 0x33333333), \
+							 (x) = ((x) & 0x0F0F0F0F) + (((x) >> 4) & 0x0F0F0F0F), \
+							 (x) = ((x) & 0x00FF00FF) + (((x) >> 8) & 0x00FF00FF), \
+							 (x) = ((x) & 0x0000FFFF) + (((x) >> 16) & 0x0000FFFF))
 
-static GPIO_Type * const GPIO_Ports[] = GPIO_BASE_PTRS;
-static PORT_Type * const PORT_Ports[] = PORT_BASE_PTRS;
-static uint32_t SCSCGC5Ports_t[] = 	{ SIM_SCGC5_PORTA(HIGH), SIM_SCGC5_PORTB(HIGH),
-									  SIM_SCGC5_PORTC(HIGH), SIM_SCGC5_PORTD(HIGH),
-									  SIM_SCGC5_PORTE(HIGH) };
-static uint8_t const PORT_IRQn[] = PORT_IRQS;
-static uint8_t const GPIO_IRQn[] = { PORT_eDisabled, PORT_eInterruptRising,
-									 PORT_eInterruptFalling, PORT_eInterruptEither };
+
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
+
 pinIrqFun_t irqFuns[32] = { NULL };
+
+
+/*******************************************************************************
+ * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ ******************************************************************************/
 
 uint8_t PinBit2Num(uint32_t pin);
 
+
+/*******************************************************************************
+ * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
+ ******************************************************************************/
+
+static GPIO_Type * const GPIO_Ports[]	=	GPIO_BASE_PTRS;
+static PORT_Type * const PORT_Ports[]	=   PORT_BASE_PTRS;
+static uint32_t SCSCGC5Ports_t[] 		= { SIM_SCGC5_PORTA(HIGH),
+									  	  	SIM_SCGC5_PORTB(HIGH),
+											SIM_SCGC5_PORTC(HIGH),
+											SIM_SCGC5_PORTD(HIGH),
+											SIM_SCGC5_PORTE(HIGH) };
+static uint8_t const PORT_IRQn[] 		= 	PORT_IRQS;
+static uint8_t const GPIO_IRQn[] 		= { PORT_eDisabled,
+									 	 	PORT_eInterruptRising,
+											PORT_eInterruptFalling,
+											PORT_eInterruptEither };
+
+
+/*******************************************************************************
+ *******************************************************************************
+                        GLOBAL FUNCTION DEFINITIONS
+ *******************************************************************************
+ ******************************************************************************/
 
 void gpioMode (pin_t pin, uint8_t mode)
 {
@@ -167,6 +201,13 @@ __ISR__ PORTE_IRQHandler (void)
 	if(irqFuns[pin] != NULL)
 		irqFuns[pin]();
 }
+
+
+/*******************************************************************************
+ *******************************************************************************
+                        LOCAL FUNCTION DEFINITIONS
+ *******************************************************************************
+ ******************************************************************************/
 
 uint8_t PinBit2Num(uint32_t pin)
 {

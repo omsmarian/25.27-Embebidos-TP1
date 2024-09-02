@@ -1,28 +1,28 @@
 /***************************************************************************//**
   @file     App.c
   @brief    Application functions
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include "hardware.h"
 #include "board.h"
 #include "gpio.h"
-#include "hardware.h"
 #include "SysTick.h"
+#include "display.h"
+#include "encoder.h"
 #include "magcard.h"
 //#include "fsl_debug_console.h"
 
-/*******************************************************************************
- * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
- ******************************************************************************/
-
 
 /*******************************************************************************
- * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
+
+MagCard_t magCard;
 
 
 /*******************************************************************************
@@ -34,21 +34,16 @@
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init(void) {
 //  printf("%d", MagCardInit());
-	bool a = MagCardInit();
+	MagCardInit();
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run(void) {
 //  printf("%d", MagCardCheckData());
 //  printf("%d", MagCardGetData());
-	bool b = MagCardCheckData();
-	MagCard_t c = MagCardGetData();
-	if(1)
-	{}
-	if (c.valid)
-	{
-		b = 1;
-	}
+	if(MagCardCheckData())
+		magCard = MagCardGetData();
+	gpioWrite(PIN_LED_GREEN, HIGH);
 }
 
 

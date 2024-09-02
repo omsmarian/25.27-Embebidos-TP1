@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     gpio.h
   @brief    Simple GPIO Pin services, similar to Arduino
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _GPIO_H_
@@ -19,16 +19,12 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-// Ports
-enum { PA, PB, PC, PD, PE };
-
 // Convert port and number into pin ID
 // Ex: PTB5  -> PORTNUM2PIN(PB,5)  -> 0x25
 //     PTC22 -> PORTNUM2PIN(PC,22) -> 0x56
 #define PORTNUM2PIN(p,n)    (((p)<<5) + (n))
 #define PIN2PORT(p)         (((p)>>5) & 0x07)
 #define PIN2NUM(p)          ((p) & 0x1F)
-
 
 // Modes
 #ifndef INPUT
@@ -38,12 +34,27 @@ enum { PA, PB, PC, PD, PE };
 #define INPUT_PULLDOWN      3
 #endif // INPUT
 
-
 // Digital values
 #ifndef LOW
-#define LOW     0
-#define HIGH    1
+#define LOW     			0
+#define HIGH    			1
 #endif // LOW
+
+
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
+
+typedef uint8_t pin_t;
+
+typedef struct
+{
+	uint8_t port	: 3;
+	uint8_t num		: 5;
+} PINData_t;
+
+// Ports
+enum { PA, PB, PC, PD, PE };
 
 // IRQ modes
 enum {
@@ -69,10 +80,10 @@ typedef enum
 
 typedef enum
 {
-	PORT_eDisabled			= 0x00,
-	PORT_eDMARising			= 0x01,
-	PORT_eDMAFalling		= 0x02,
-	PORT_eDMAEither			= 0x03,
+	PORT_eDisabled				= 0x00,
+	PORT_eDMARising				= 0x01,
+	PORT_eDMAFalling			= 0x02,
+	PORT_eDMAEither				= 0x03,
 	PORT_eInterruptDisasserted	= 0x08,
 	PORT_eInterruptRising		= 0x09,
 	PORT_eInterruptFalling		= 0x0A,
@@ -82,23 +93,6 @@ typedef enum
 
 typedef void (*pinIrqFun_t)(void);
 
-typedef struct
-{
-	uint8_t port	: 3;
-	uint8_t num		: 5;
-} PINData_t;
-
-
-/*******************************************************************************
- * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
- ******************************************************************************/
-
-typedef uint8_t pin_t;
-
-
-/*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -119,7 +113,6 @@ void gpioMode (pin_t pin, uint8_t mode);
  * @return Registration succeed
  */
 bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun);
-// bool gpioIRQ (pin_t pin, uint8_t irqMode);
 
 /**
  * @brief Write a HIGH or a LOW value to a digital pin

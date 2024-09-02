@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     display.h
   @brief    Display driver
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _DISPLAY_H_
@@ -13,12 +13,12 @@
 
 #include <stdbool.h>
 
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-/***** DISPLAY defines **********************************************************/
-
+/***** DISPLAY defines ********************************************************/
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -32,33 +32,33 @@
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-/**
- * @brief
- * @param
- * @return
- */
-bool displayInit (void);
-
-/**
- * @brief
- * @param
- * @return
- */
-bool displayWrite (void);
-
-/**
- * @brief
- * @param
- * @return
- */
-bool displayClear (void);
-
-/**
- * @brief
- * @param
- * @return
- */
-bool display_SetBrightness (void);
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool displayInit (void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool displayWrite (void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool displayClear (void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool displaySetBrightness (void);
 
 
 /*******************************************************************************

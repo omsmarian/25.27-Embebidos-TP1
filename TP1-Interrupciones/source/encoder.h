@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     encoder.h
   @brief    Encoder driver
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _ENCODER_H_
@@ -11,12 +11,14 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdbool.h>
+
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-/***** ENCODER defines **********************************************************/
-
+/***** ENCODER defines ********************************************************/
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -30,40 +32,40 @@
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderInit(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderRead(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderGetCurrentPos(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// void encoderReset(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderSet(void);
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool encoderInit(void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool encoderRead(void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool encoderGetCurrentPos(void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//void encoderReset(void);
+//
+///**
+// * @brief
+// * @param
+// * @return
+// */
+//bool encoderSet(void);
 
 
 /*******************************************************************************

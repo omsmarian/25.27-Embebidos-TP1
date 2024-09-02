@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     timer.c
   @brief    Timer driver. Advance implementation
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
@@ -41,10 +41,6 @@ typedef struct {
 
 
 /*******************************************************************************
- * VARIABLES WITH GLOBAL SCOPE
- ******************************************************************************/
-
-/*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
@@ -53,10 +49,6 @@ typedef struct {
  */
 static void timer_isr(void);
 
-
-/*******************************************************************************
- * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -83,7 +75,6 @@ void timerInit(void)
     yaInit = true;
 }
 
-
 tim_id_t timerGetId(void)
 {
 #ifdef TIMER_DEVELOPMENT_MODE
@@ -98,7 +89,6 @@ tim_id_t timerGetId(void)
     }
 }
 
-
 void timerStart(tim_id_t id, ttick_t ticks, uint8_t mode, tim_callback_t callback)
 {
 #ifdef TIMER_DEVELOPMENT_MODE
@@ -112,7 +102,6 @@ void timerStart(tim_id_t id, ttick_t ticks, uint8_t mode, tim_callback_t callbac
     }
 }
 
-
 void timerStop(tim_id_t id)
 {
     // ****** COMPLETAR ******
@@ -120,14 +109,12 @@ void timerStop(tim_id_t id)
     // y bajo el flag
 }
 
-
 bool timerExpired(tim_id_t id)
 {
     // ****** COMPLETAR ******
     // Verifico si expiró el timer
     // y bajo el flag
 }
-
 
 void timerDelay(ttick_t ticks)
 {
