@@ -41,9 +41,11 @@ void App_Init(void) {
 void App_Run(void) {
 //  printf("%d", MagCardCheckData());
 //  printf("%d", MagCardGetData());
-	if(MagCardCheckData())
+	if(MagCardGetStatus())
+	{
 		magCard = MagCardGetData();
-	gpioWrite(PIN_LED_GREEN, HIGH);
+		gpioWrite(PIN_LED_GREEN, HIGH);
+	}
 }
 
 

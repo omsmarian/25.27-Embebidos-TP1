@@ -59,12 +59,26 @@ typedef struct {
 } MagCard_t;
 
 typedef enum {
+	OFF,
     IDLE,
-    READ,
-    SORT,
-    PARSE,
-    INVALID
+    READING,
+    PROCESSING,
+	VALID_DATA_AVAILABLE,
 } MagCardState_t;
+
+typedef enum {
+	NONE,
+	INIT,
+	ENABLE_FallingEdge,
+	ENABLE_RisingEdge,
+	CLOCK_FallingEdge,
+	GET_STATUS,
+	DATA_ACCESSED,
+} MagCardEvent_t;
+
+typedef bool bit_t;
+
+typedef uint8_t byte_t;
 
 
 /*******************************************************************************
@@ -83,7 +97,7 @@ bool MagCardInit (void);
  * @param
  * @return
  */
-bool MagCardCheckData (void);
+bool MagCardGetStatus (void);
 
 /**
  * @brief
