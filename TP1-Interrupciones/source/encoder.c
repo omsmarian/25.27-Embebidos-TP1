@@ -10,7 +10,7 @@
 
 #include "encoder.h"
 #include "board.h"
-#include "timer.h"
+#include "SysTick.h"
 
 
 /*******************************************************************************
@@ -47,11 +47,10 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// /**
-//  * @brief Periodic service
-//  */
-// static void encoder_isr(void);
-
+/**
+* @brief Checks for encoder gesture
+*/
+static void encoderCallback(void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -61,13 +60,6 @@
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// static bool flag_switch = 0;
-// static bool flag_turn_right = 0;
-// static bool flag_turn_left = 0;
-
-// static EncoderNegEdge_t flag_first = None;
-// static EncoderTurnDir_t flag_turn = None;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -75,31 +67,16 @@
  *******************************************************************************
  ******************************************************************************/
 
-bool encoder_Init(void) {
-    gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
-    gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
-    gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
+bool encoder_Init(void)
+{
+  gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
+  gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
+  gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-    timerInit();
-    timerStart(timerGetId(), TIMER_MS2TICKS(10), TIM_MODE_PERIODIC, encoder_isr);
+  SysTick_Init(encoderCallback);
 
-    return 0;
+  return 0;
 }
-
-EncoderTurnDir_t encoderRead(void) {
-    return flag_turn;
-}
-
-void encoderReset(void) {
-    flag_switch = 0;
-    flag_turn_right = 0;
-    flag_turn_left = 0;
-}
-
-bool encoderSet(void) {
-    return 0;
-}
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -107,35 +84,31 @@ bool encoderSet(void) {
  *******************************************************************************
  ******************************************************************************/
 
-// static void encoder_isr(void) {
-//     if(gpioRead(PIN_ENCODER_RSWITCH) == 0) { // Falta el debounce
-//         flag_switch = 1;
-//     }
-//     // else {
-//     //     flag_switch = 0;
-//     // }
-//     switch (flag_first)
-//     {
-//     case None:
-//         flag_turn_right = 0;
-//         flag_turn_left = 0;
-//         break;
-
-//     case RCHA:
-//         if (gpioRead(PIN_ENCODER_RCHB))
-//             flag_turn_right = 1;
-//             flag_turn_left = 0;
-//             flag_first = NONE;
-//         break;
-
-//     case RCHB:
-//         if (gpioRead(PIN_ENCODER_RCHA))
-//             flag_turn_right = 0;
-//             flag_turn_left = 1;
-//             flag_first = NONE;
-//         break;
-//     }
-// }
+static void encoderCallback(void)
+{
+  if(gpioRead(PIN_ENCODER_RCHA) == LOW)
+  {
+    if(gpioRead(PIN_ENCODER_RCHB) == LOW)
+    {
+      // tengo q saber
+    }
+    else
+    {
+      // Left
+    }
+  }
+  else
+  {
+    if(gpioRead(PIN_ENCODER_RCHB) == LOW)
+    {
+      // Left
+    }
+    else
+    {
+      // Right
+    }
+  }
+}
 
 
 /******************************************************************************/
