@@ -10,6 +10,8 @@
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
+#include <stdbool.h>
+#include "hardware.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -22,6 +24,12 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+enum {
+  RIGHT,
+  LEFT,
+  CLICK,
+  LONG_CLICK,};
+
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
@@ -30,19 +38,17 @@
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderInit(void);
+/**
+ * @brief Initialize the encoder
+ * @return return true if the encoder was initialized successfully
+ */
+bool encoder_Init(void);
 
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderRead(void);
+/**
+ * @brief Reads the encoder gesture
+ * @return return the gesture read from the encoder
+ */
+uint8_t encoderRead(void);
 
 // /**
 //  * @brief

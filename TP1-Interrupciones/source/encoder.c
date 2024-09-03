@@ -11,7 +11,6 @@
 #include "encoder.h"
 #include "board.h"
 #include "timer.h"
-#include <stdbool.h>
 
 
 /*******************************************************************************
@@ -76,30 +75,30 @@
  *******************************************************************************
  ******************************************************************************/
 
-// bool encoderInit(void) {
-//     gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
-//     gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
-//     gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
+bool encoder_Init(void) {
+    gpioMode(PIN_ENCODER_RCHA, INPUT_PULLUP);
+    gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
+    gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-//     timerInit();
-//     timerStart(timerGetId(), TIMER_MS2TICKS(10), TIM_MODE_PERIODIC, encoder_isr);
+    timerInit();
+    timerStart(timerGetId(), TIMER_MS2TICKS(10), TIM_MODE_PERIODIC, encoder_isr);
 
-//     return 0;
-// }
+    return 0;
+}
 
-// EncoderTurnDir_t encoderRead(void) {
-//     return flag_turn;
-// }
+EncoderTurnDir_t encoderRead(void) {
+    return flag_turn;
+}
 
-// void encoderReset(void) {
-//     flag_switch = 0;
-//     flag_turn_right = 0;
-//     flag_turn_left = 0;
-// }
+void encoderReset(void) {
+    flag_switch = 0;
+    flag_turn_right = 0;
+    flag_turn_left = 0;
+}
 
-// bool encoderSet(void) {
-//     return 0;
-// }
+bool encoderSet(void) {
+    return 0;
+}
 
 
 /*******************************************************************************
