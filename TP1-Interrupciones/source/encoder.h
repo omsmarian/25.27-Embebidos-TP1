@@ -24,11 +24,12 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-enum {
+typedef enum {
+  NONE,
   RIGHT,
   LEFT,
   CLICK,
-  LONG_CLICK,};
+  LONG_CLICK}action_t;
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
@@ -48,29 +49,7 @@ bool encoder_Init(void);
  * @brief Reads the encoder gesture
  * @return return the gesture read from the encoder
  */
-uint8_t encoderRead(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderGetCurrentPos(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// void encoderReset(void);
-
-// /**
-//  * @brief
-//  * @param
-//  * @return
-//  */
-// bool encoderSet(void);
-
+action_t encoderRead(void);
 
 /*******************************************************************************
  ******************************************************************************/
