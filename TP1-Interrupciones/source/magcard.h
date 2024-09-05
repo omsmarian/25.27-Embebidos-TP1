@@ -30,6 +30,7 @@
 #define PVKI_LENGTH		        1
 #define PVV_LENGTH		        4
 #define CVV_LENGTH		        3
+#define UNUSED_SPACE			2
 
 
 /*******************************************************************************

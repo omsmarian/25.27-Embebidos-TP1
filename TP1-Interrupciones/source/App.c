@@ -44,7 +44,8 @@ void App_Run(void) {
 	if(MagCardGetStatus())
 	{
 		magCard = *MagCardGetData();
-		gpioWrite(PIN_LED_GREEN, HIGH);
+		gpioWrite(PIN_LED_BLUE, LOW);
+		gpioWrite(PIN_LED_RED, HIGH);
 	}
 }
 

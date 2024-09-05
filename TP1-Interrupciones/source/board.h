@@ -61,9 +61,9 @@
 
 
 // Magnetic Stripe Card Reader
-#define PIN_MAGCARD_DATA		PORTNUM2PIN(PB, 23)	// PTB23
-#define PIN_MAGCARD_CLOCK		PORTNUM2PIN(PA, 1)	// PTA1
 #define PIN_MAGCARD_ENABLE		PORTNUM2PIN(PB, 9)	// PTB9
+#define PIN_MAGCARD_CLOCK		PORTNUM2PIN(PA, 1)	// PTA1
+#define PIN_MAGCARD_DATA		PORTNUM2PIN(PB, 23)	// PTB23
 
 
 /*******************************************************************************

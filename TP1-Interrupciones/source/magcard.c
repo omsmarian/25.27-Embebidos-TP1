@@ -21,16 +21,20 @@
 
 #define DEVELOPMENT_MODE        1
 
-#define MAX_CHARS		        MAX_PAN_LENGTH + EXPIRATION_LENGTH + SERVICE_CODE_LENGTH + PVKI_LENGTH + PVV_LENGTH + CVV_LENGTH + 4
-#define DATA_LENGTH		        CHAR_LENGTH + PARITY_LENGTH
-#define MAX_TRACK_SIZE	        DATA_LENGTH * MAX_CHARS
+#define MAX_CHARS		        (MAX_PAN_LENGTH + \
+								 EXPIRATION_LENGTH + SERVICE_CODE_LENGTH + \
+								 PVKI_LENGTH + PVV_LENGTH + CVV_LENGTH + UNUSED_SPACE + 4)
+#define DATA_LENGTH		        (CHAR_LENGTH + PARITY_LENGTH)
+#define MAX_TRACK_SIZE	        (DATA_LENGTH * MAX_CHARS)
 
 #define START_SENTINEL	        0xB
 #define FIELD_SEPARATOR	        0xD
 #define END_SENTINEL	        0xF
 
-#define BITINSERT_RIGHT(x, b)   (x = x << 1 | (b << (CHAR_LENGTH - 1)));
-#define BITINSERT_LEFT(x, b)    (x = (x >> 1) | (b << (CHAR_LENGTH - 1)));
+#define BITROLL_LEFT(x, b)		(x = ((x << 1) & 0xF) | (b & 1));
+#define BITROLL_RIGHT(x, b)		(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)));
+
+#define CHAR2ASCII(c)			(c + 48)
 
 
 /*******************************************************************************
@@ -76,14 +80,14 @@ static uint8_t          __StoreChar__   (uint8_t track2_pos, char data[], uint8_
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static bool				track2[200]		= { 0 };
-static uint8_t			track2_length	= 0;
-static uint8_t			index			= 0;
-//static bool			data[40][4]		= { { 0 } }; // Another way to store data, easier to access and check
+static bool				track2[MAX_TRACK_SIZE + 1]	= { 0 };
+static uint8_t			track2_length				= 0;
+static uint8_t			index						= 0;
+//static bool			data[40][4]					= { { 0 } }; // Another way to store data, easier to access and check
 
 static MagCard_t		magCard;
-static MagCardState_t	state			= OFF;
-//static MagCardEvent_t	event			= NONE;
+static MagCardState_t	state						= OFF;
+//static MagCardEvent_t	event						= NONE;
 
 
 /*******************************************************************************
@@ -141,7 +145,7 @@ static MagCardState_t FSM (MagCardEvent_t event)
 		case IDLE:
 			if (event == ENABLE_FallingEdge)
 			{
-				state = READING;
+				state = WAITING_SS;
 				magCard.valid = false;
 				index = 0;
 			}
@@ -156,11 +160,17 @@ static MagCardState_t FSM (MagCardEvent_t event)
 			{
 				static char buffer = 0;
 				ReadBit();
-				BITINSERT_LEFT(buffer, track2[0]);
-				buffer >>= track2[0];
+				BITROLL_RIGHT(buffer, track2[0]);
 				if (buffer == START_SENTINEL) // Search for SS
+				{
 					state = READING;
-				index = 0;
+					for (uint8_t i = 0; i < CHAR_LENGTH; i++)
+						track2[i] = buffer & (1 << i);
+					buffer = 0;
+					index = CHAR_LENGTH;
+				}
+				else
+					index = 0;
 
 //				__Bits2Char__(track2);
 //
@@ -183,7 +193,12 @@ static MagCardState_t FSM (MagCardEvent_t event)
 
 		case READING:
 			if (event == CLOCK_FallingEdge)
+			{
 				ReadBit();
+				if (index > MAX_TRACK_SIZE)
+					index = MAX_TRACK_SIZE;
+
+			}
 			else if (event == ENABLE_RisingEdge)
 				state = PROCESSING;
 
@@ -204,17 +219,23 @@ static MagCardState_t FSM (MagCardEvent_t event)
 //				magCard.valid = false;
 
 			uint8_t i = 0, buffer = 0;
-			do { buffer = __Bits2Char__(track2 + i * 5); }
+			do { buffer = __Bits2Char__(track2 + i * DATA_LENGTH); }
 			while (i++ < MAX_TRACK_SIZE && buffer != FIELD_SEPARATOR); // Search for FS
-			magCard.data.PAN_length = i * 5 - 1; // SS not included
+			magCard.data.PAN_length = i - 2; // SS and FS not included
 			if (buffer == FIELD_SEPARATOR && magCard.data.PAN_length <= MAX_PAN_LENGTH)
 			{
-				while (i++ < MAX_TRACK_SIZE && __Bits2Char__(track2 + i * 5) != END_SENTINEL); // Search for ES
-				if(i < MAX_TRACK_SIZE - CHAR_LENGTH - 2) // Even if ES was found at the end, its parity bit and the LRC would be missing
+				while (i++ < MAX_CHARS && __Bits2Char__(track2 + i * DATA_LENGTH) != END_SENTINEL)
 				{
-					track2_length = i + CHAR_LENGTH + 2;
+					uint8_t a = __Bits2Char__(track2 + i * DATA_LENGTH); // Search for ES
+					if (a == END_SENTINEL || i == 37)
+						buffer = 3;
+				}
+				if(i < MAX_CHARS) // LRC included
+				{
+					track2_length = (i + 1) * DATA_LENGTH;
 					magCard.valid = CheckParity();
-					ParseData();
+					if (magCard.valid)
+						ParseData();
 				}
 			}
 			else
@@ -280,18 +301,18 @@ static bool CheckParity (void)
 	for (uint8_t i = 0; i < DATA_LENGTH; i++)
 		buffer ^= cols[i];
 
-	if (!buffer)
+	if (!(~buffer))
 	{
-		uint8_t rows[MAX_TRACK_SIZE] = { 0 }; // Parity not included
+		uint8_t rows[MAX_CHARS] = { 0 }; // Parity not included
 		for (uint8_t j = 0; j * 5 < track2_length; j++)
 			for (uint8_t i = 0; i < CHAR_LENGTH; i++)
 				rows[j] |= (track2[i + j * 5]) << i;
 
 		uint8_t buffer = 0;
-		for (uint8_t i = 0; i < track2_length; i++)
+		for (uint8_t i = 0; i < MAX_CHARS; i++)
 			buffer ^= rows[i];
 		
-		if (buffer)
+		if (!(~buffer))
 			status = false;
 	}
 	else
@@ -302,7 +323,7 @@ static bool CheckParity (void)
 
 static void ParseData (void)
 {
-	uint8_t i = 1; // Skip SS
+	uint8_t i = DATA_LENGTH; // Skip SS
 
 	i = __StoreChar__(i, magCard.data.PAN, magCard.data.PAN_length) + DATA_LENGTH; // Skip FS
 	i = __StoreChar__(i, magCard.additional_data.expiration, EXPIRATION_LENGTH);
@@ -313,7 +334,7 @@ static void ParseData (void)
 	i = __StoreChar__(i, &magCard.LRC, 1);
 }
 
-// Helper Functions ////////////////////////////////////////////////////////////
+// Helper Functions //////////////////////////////////////////////////////////// // Could be MACROs?
 
 static char __Bits2Char__ (bool bits[])
 {
@@ -324,10 +345,10 @@ static char __Bits2Char__ (bool bits[])
 	return buffer;
 }
 
-static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length) // Could be a MACRO?
+static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length)
 {
-	for (uint8_t j = 0; track2_pos < track2_length && track2_pos < j + length; track2_pos+=DATA_LENGTH, j++)
-		field[j] = __Bits2Char__(track2 + track2_pos);
+	for (uint8_t j = 0; track2_pos < track2_length && j < length; track2_pos+=DATA_LENGTH, j++)
+		field[j] = CHAR2ASCII(__Bits2Char__(track2 + track2_pos));
 
 	return track2_pos;
 }
@@ -340,3 +361,5 @@ static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length) 
 // Check if data is valid before storing it?
 // Should Parse() check if data is valid even if parity and LRC is correct?
 // Search for FS needed?
+// Some of the xxxxx < track_length, etc. are not needed (after validation), but its safer this way
+// How to distinguish discretionary data?
