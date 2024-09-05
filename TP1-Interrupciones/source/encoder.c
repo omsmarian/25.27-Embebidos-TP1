@@ -18,7 +18,7 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE    1
-#define LONG_CLICK_THRESHOLD 1000
+#define LONG_CLICK_THRESHOLD 15
 
 
 /*******************************************************************************
@@ -75,7 +75,7 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
   pisrRegister(directionCallback, 1);
-  pisrRegister(switchCallback, 10);
+  pisrRegister(switchCallback, 100);
 
   return 0;
 }
@@ -103,18 +103,18 @@ static void directionCallback(void)
   {
     if(RCHA)
     {
-      if(!RCHB)   // derecha
+      if(!RCHB)   // Izquierda
       {
-        direction = RIGHT;
+        direction = LEFT;
         falling_edge = true;
       }
       else
         direction = NONE;
     }
     else
-      if(RCHB)  // izquierda
+      if(RCHB)  // Derecha
       {
-        direction = LEFT;
+        direction = RIGHT;
         falling_edge = true;
       }
   }
