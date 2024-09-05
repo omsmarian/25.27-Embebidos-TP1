@@ -47,9 +47,13 @@
 
 typedef uint8_t pin_t;
 
+typedef bool bit_t;
+
+typedef uint8_t byte_t;
+
 typedef struct
 {
-	uint8_t port	: 3;
+	uint8_t port    : 3;
 	uint8_t num		: 5;
 } PINData_t;
 

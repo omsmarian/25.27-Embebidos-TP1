@@ -69,18 +69,18 @@ uint8_t PinBit2Num(uint32_t pin);
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static GPIO_Type * const GPIO_Ports[]	=	GPIO_BASE_PTRS;
-static PORT_Type * const PORT_Ports[]	=   PORT_BASE_PTRS;
-static uint32_t SCSCGC5Ports_t[] 		= { SIM_SCGC5_PORTA(HIGH),
-									  	  	SIM_SCGC5_PORTB(HIGH),
-											SIM_SCGC5_PORTC(HIGH),
-											SIM_SCGC5_PORTD(HIGH),
-											SIM_SCGC5_PORTE(HIGH) };
-static uint8_t const PORT_IRQn[] 		= 	PORT_IRQS;
-static uint8_t const GPIO_IRQn[] 		= { PORT_eDisabled,
-									 	 	PORT_eInterruptRising,
-											PORT_eInterruptFalling,
-											PORT_eInterruptEither };
+static GPIO_Type * const    GPIO_Ports[]        =   GPIO_BASE_PTRS;
+static PORT_Type * const    PORT_Ports[]        =   PORT_BASE_PTRS;
+static uint32_t             SCSCGC5Ports_t[]    = { SIM_SCGC5_PORTA(HIGH),
+									  	  	        SIM_SCGC5_PORTB(HIGH),
+											        SIM_SCGC5_PORTC(HIGH),
+											        SIM_SCGC5_PORTD(HIGH),
+											        SIM_SCGC5_PORTE(HIGH) };
+static uint8_t const        PORT_IRQn[] 		=   PORT_IRQS;
+static uint8_t const        GPIO_IRQn[] 		= { PORT_eDisabled,
+									 	 	        PORT_eInterruptRising,
+											        PORT_eInterruptFalling,
+											        PORT_eInterruptEither };
 
 
 /*******************************************************************************

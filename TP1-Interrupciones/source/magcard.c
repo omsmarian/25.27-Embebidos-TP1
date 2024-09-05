@@ -12,141 +12,129 @@
 #include "magcard.h"
 #include "board.h"
 #include "gpio.h"
-//#include "SysTick.h"
+//#include "pisr.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE	1
-#define MAX_TRACK_SIZE		200
-#define MAX_CHARS			40
-#define START_SENTINEL		0xB
-#define FIELD_SEPARATOR		0xD
-#define END_SENTINEL		0xF
-//#define INVALID_DATA		{ 0 }
-#define CHAR_LENGTH			4 // bits
-#define MAX_PAN_LENGTH		19 // chars
-//#define MAX_FS_POS_		1 + MAX_PAN_LENGTH
-#define EXPIRATION_LENGTH	4
-#define SERVICE_CODE_LENGTH	3
-#define PVKI_LENGTH			1
-#define PVV_LENGTH			4
-#define CVV_LENGTH			3
-#define LRC_LENGTH			1
+#define DEVELOPMENT_MODE        1
+
+#define MAX_CHARS		        MAX_PAN_LENGTH + EXPIRATION_LENGTH + SERVICE_CODE_LENGTH + PVKI_LENGTH + PVV_LENGTH + CVV_LENGTH + 4
+#define DATA_LENGTH		        CHAR_LENGTH + PARITY_LENGTH
+#define MAX_TRACK_SIZE	        DATA_LENGTH * MAX_CHARS
+
+#define START_SENTINEL	        0xB
+#define FIELD_SEPARATOR	        0xD
+#define END_SENTINEL	        0xF
+
+#define BITINSERT_RIGHT(x, b)   (x = x << 1 | (b << (CHAR_LENGTH - 1)));
+#define BITINSERT_LEFT(x, b)    (x = (x >> 1) | (b << (CHAR_LENGTH - 1)));
 
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+typedef enum {
+	OFF,
+	IDLE,
+	WAITING_SS,
+	READING,
+	PROCESSING,
+	VALID_DATA_AVAILABLE,
+} MagCardState_t;
+
+typedef enum {
+	NONE,
+	INIT,
+	ENABLE_FallingEdge,
+	ENABLE_RisingEdge,
+	CLOCK_FallingEdge,
+	GET_STATUS,
+	DATA_ACCESSED,
+} MagCardEvent_t;
+
+
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static void FSM					(MagCardEvent_t event);
-static bool Init				(void);
-static void ReadEnable			(void);
-static void ReadClock			(void);
-static void ReadBit				(void);
-static bool CleanData			(void);
-//static bool CheckRowParity	(char character, bool parity);
-//static bool CheckColumnParity	(void);
-static bool CheckParity			(void);
-static bool ParseData			(void);
-static char Bits2Char			(bool bits[]);
+static MagCardState_t   FSM		    	(MagCardEvent_t event);
+static bool             Init	    	(void);
+static void             ReadEnable  	(void);
+static void             ReadClock   	(void);
+static void             ReadBit	    	(void);
+static bool             CheckParity 	(void);
+static void             ParseData   	(void);
+static char             __Bits2Char__   (bool bits[]);
+static uint8_t          __StoreChar__   (uint8_t track2_pos, char data[], uint8_t length);
+
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static char				data[40]			= { 0 }; // There has to be a better option...
-//static bool			parity[40]			= { 0 };
-static bool				track_buffer[200]	= { 0 };
-static bool *			track2				= NULL;
-static uint8_t			index				= 0;
-//static bool			data[40][4]			= { { 0 } }; // Would use 1 byte to store 1 bit!!! But is convenient...
-
-//MagCardFlags_t		flags				= { 0 };
-static bool				flag_invalid		= false;
-static bool				flag_data_ready		= false;
-
-static uint8_t			ss_pos_bits			= 0;
-static uint8_t			fs_pos_chars		= 0;
-static uint8_t			es_pos_chars		= 0;
-static uint8_t			lrc_pos_chars		= 0;
-static uint8_t			track2_length		= 0;
+static bool				track2[200]		= { 0 };
+static uint8_t			track2_length	= 0;
+static uint8_t			index			= 0;
+//static bool			data[40][4]		= { { 0 } }; // Another way to store data, easier to access and check
 
 static MagCard_t		magCard;
-static MagCardState_t	state				= OFF;
-//static MagCardEvent_t	event				= NONE;
-
-// Reset function?
-// Initialization function or initialize here?
-// Store data until retrieved?
+static MagCardState_t	state			= OFF;
+//static MagCardEvent_t	event			= NONE;
 
 
 /*******************************************************************************
  *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
+						GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-bool MagCardInit (void)
-{
-	FSM(INIT);
-
-	return state != OFF; // Correctly initialized
-}
-
-bool MagCardGetStatus (void)
-{ return magCard.valid && state == IDLE; } // return if data was read or only if it was valid?
-										   // A flag would be simpler
-
-//bool MagCardGetStatus (void)
+//bool MagCardGetStatus (void) // return if data was read or only if it was valid?
 //{
 //	FSM(GET_STATUS);
 //
 //	return state == VALID_DATA_AVAILABLE;
 //}
 
+bool                            MagCardInit                 (void) { return !FSM(INIT); } // OFF: 0
+bool                            MagCardGetStatus            (void) { return magCard.valid && state == IDLE; }
+
 // Complete Data Access
 
-MagCard_t					MagCardGetData				(void) { return magCard; }
-MagCardData_t				MagCardGetPANData			(void) { return magCard.data; }
-MagCardAdditionalData_t		MagCardGetAdditionalData	(void) { return magCard.additional_data; }
-MagCardDiscretionaryData_t	MagCardGetDiscretionaryData	(void) { return magCard.discretionary_data; }
+MagCard_t *						MagCardGetData				(void) { return &magCard; }
+MagCardData_t *					MagCardGetPANData			(void) { return &magCard.data; }
+MagCardAdditionalData_t *		MagCardGetAdditionalData	(void) { return &magCard.additional_data; }
+MagCardDiscretionaryData_t *    MagCardGetDiscretionaryData	(void) { return &magCard.discretionary_data; }
 
 // Direct Field Access
 
-char *						MagCardGetPAN				(void) { return magCard.data.PAN; }
-uint8_t						MagCardGetPANLength			(void) { return magCard.data.PAN_length; }
-char *						MagCardGetExpiration		(void) { return magCard.additional_data.expiration; }
-char *						MagCardGetServiceCode		(void) { return magCard.additional_data.service_code; }
-char						MagCardGetPVKI				(void) { return magCard.discretionary_data.PVKI; }
-char *						MagCardGetPVV				(void) { return magCard.discretionary_data.PVV; }
-char *						MagCardGetCVV				(void) { return magCard.discretionary_data.CVV; }
-char						MagCardGetLRC				(void) { return magCard.LRC; }
-//bool						MagCardIsValid				(void) { return magCard.valid; }
+char *							MagCardGetPAN				(void) { return magCard.data.PAN; }
+uint8_t							MagCardGetPANLength			(void) { return magCard.data.PAN_length; }
+char *							MagCardGetExpiration		(void) { return magCard.additional_data.expiration; }
+char *							MagCardGetServiceCode		(void) { return magCard.additional_data.service_code; }
+char *							MagCardGetPVKI				(void) { return magCard.discretionary_data.PVKI; }
+char *							MagCardGetPVV				(void) { return magCard.discretionary_data.PVV; }
+char *							MagCardGetCVV				(void) { return magCard.discretionary_data.CVV; }
+char							MagCardGetLRC				(void) { return magCard.LRC; }
+//bool							MagCardIsValid				(void) { return magCard.valid; }
 
 
 /*******************************************************************************
  *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
+						LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-static void FSM (MagCardEvent_t event)
+static MagCardState_t FSM (MagCardEvent_t event)
 {
 	switch (state)
 	{
 		case OFF:
 			if (event == INIT && Init())
-			{
 				state = IDLE;
-				// Initialize variables here?
-			}
 
 			break;
 
@@ -154,12 +142,42 @@ static void FSM (MagCardEvent_t event)
 			if (event == ENABLE_FallingEdge)
 			{
 				state = READING;
-				index = ss_pos_bits = fs_pos_chars = es_pos_chars = lrc_pos_chars = 0;
-				flag_data_ready = flag_invalid = 0;
+				magCard.valid = false;
+				index = 0;
 			}
 //			if (event == GET_STATUS)
 //				state = VALID_DATA_AVAILABLE; // This depends on what happens to the data
 //											  // if another swipe occurs before it was read from App()
+
+			break;
+
+		case WAITING_SS: // Same as READING but without storing data
+			if (event == CLOCK_FallingEdge)
+			{
+				static char buffer = 0;
+				ReadBit();
+				BITINSERT_LEFT(buffer, track2[0]);
+				buffer >>= track2[0];
+				if (buffer == START_SENTINEL) // Search for SS
+					state = READING;
+				index = 0;
+
+//				__Bits2Char__(track2);
+//
+//				bool flag = false;
+//				for (uint8_t i = 0; i < CHAR_LENGTH && flag; i++)
+//					flag = (START_SENTINEL & (1 << i)) >> i == track2[i];
+//				if (flag)
+//					state = READING;
+//
+//				char buffer = 0;
+//				while (i < CHAR_LENGTH && buffer != START_SENTINEL) // Search for SS
+//					buffer = ((buffer >> 1) & 0xF) | (track2[i++] << (CHAR_LENGTH - 1));
+//				if (buffer == START_SENTINEL)
+//					state = READING;
+			}
+			else if (event == ENABLE_RisingEdge)
+				state = IDLE;
 
 			break;
 
@@ -184,7 +202,24 @@ static void FSM (MagCardEvent_t event)
 ////			}
 //			else
 //				magCard.valid = false;
-			magCard.valid = CleanData() && CheckParity() && ParseData();
+
+			uint8_t i = 0, buffer = 0;
+			do { buffer = __Bits2Char__(track2 + i * 5); }
+			while (i++ < MAX_TRACK_SIZE && buffer != FIELD_SEPARATOR); // Search for FS
+			magCard.data.PAN_length = i * 5 - 1; // SS not included
+			if (buffer == FIELD_SEPARATOR && magCard.data.PAN_length <= MAX_PAN_LENGTH)
+			{
+				while (i++ < MAX_TRACK_SIZE && __Bits2Char__(track2 + i * 5) != END_SENTINEL); // Search for ES
+				if(i < MAX_TRACK_SIZE - CHAR_LENGTH - 2) // Even if ES was found at the end, its parity bit and the LRC would be missing
+				{
+					track2_length = i + CHAR_LENGTH + 2;
+					magCard.valid = CheckParity();
+					ParseData();
+				}
+			}
+			else
+				magCard.valid = false;
+
 			state = IDLE;
 
 			break;
@@ -207,108 +242,57 @@ static void FSM (MagCardEvent_t event)
 
 			break;
 	}
+
+	return state;
 }
 
 static bool Init (void)
 {
 	bool status = true;
 
-	magCard.valid = false; // Initialized here?
+	magCard.valid = false;
 
 	gpioMode(PIN_MAGCARD_ENABLE, INPUT);
 	gpioMode(PIN_MAGCARD_CLOCK, INPUT);
 	gpioMode(PIN_MAGCARD_DATA, INPUT);
 
-	if (status)
-		status = !gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable); // Periodic?
+	status = !gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable); // Periodic?
 	if (status)
 		status = !gpioIRQ(PIN_MAGCARD_CLOCK, GPIO_IRQ_MODE_FALLING_EDGE, ReadClock);
 
 	return status; // Should return 1 if there was an error...
 }
 
-static void ReadEnable (void)
-{ FSM(!gpioRead(PIN_MAGCARD_ENABLE) ? ENABLE_FallingEdge : ENABLE_RisingEdge); } // In this case a flag would be better (faster)
+static void ReadEnable  (void) { FSM(!gpioRead(PIN_MAGCARD_ENABLE) ? ENABLE_FallingEdge : ENABLE_RisingEdge); }
+static void ReadClock   (void) { FSM(CLOCK_FallingEdge); }
+static void ReadBit     (void) { track2[index++] = !gpioRead(PIN_MAGCARD_DATA); } // Data is inverted
 
-static void ReadClock (void)
-{ FSM(CLOCK_FallingEdge); }
-
-static void ReadBit (void)
-{
-	track_buffer[index++] = !gpioRead(PIN_MAGCARD_DATA); // Data is inverted
-	index %= MAX_TRACK_SIZE; // Prevent writing after end of array
-}
-
-static bool CleanData (void)
+static bool CheckParity (void)
 {
 	bool status = true;
-	char buffer = 0;
-	uint8_t i = 0, j = 0;
 
-	while (i < MAX_TRACK_SIZE && buffer != START_SENTINEL) // Search for SS
-		buffer = ((buffer >> 1) & 0xF) | (track_buffer[i++] << (CHAR_LENGTH - 1));
-	j = i;
-	while (i < MAX_TRACK_SIZE && buffer != END_SENTINEL) // Search for ES
-		buffer = ((buffer >> 1) & 0xF) | (track_buffer[i++] << (CHAR_LENGTH - 1));
+	uint32_t cols[DATA_LENGTH] = { 0 }; // Parity included
+	for (uint8_t i = 0; i < DATA_LENGTH; i++)
+		for (uint8_t j = 0; j * 5 < track2_length; j++)
+			cols[i] |= (track2[i + j * 5]) << j;
 
-	if (i < MAX_TRACK_SIZE - CHAR_LENGTH - 2) // Even if ES was found at the end, its parity bit and the LRC would be missing
+	uint32_t buffer = 0;
+	for (uint8_t i = 0; i < DATA_LENGTH; i++)
+		buffer ^= cols[i];
+
+	if (!buffer)
 	{
-		track2 = &track_buffer[j - CHAR_LENGTH];
-		track2_length = i + CHAR_LENGTH + 2;
+		uint8_t rows[MAX_TRACK_SIZE] = { 0 }; // Parity not included
+		for (uint8_t j = 0; j * 5 < track2_length; j++)
+			for (uint8_t i = 0; i < CHAR_LENGTH; i++)
+				rows[j] |= (track2[i + j * 5]) << i;
 
-//		for (uint8_t i = 0; i < 40 && !lrc_pos_chars; i++) // Instead of 40 use the number of elements read
-//		{
-//			data[i] = 0;
-//			for (uint8_t j = 0; j < 4; j++)
-//				data[i] |= track_buffer[ss_pos_bits + i * 5 + j] << j;
-//			parity[i] = track_buffer[ss_pos_bits + i * 5 + CHAR_LENGTH];
-//
-//			if(data[i] == FIELD_SEPARATOR)
-//				fs_pos_chars = i;
-//			else if(data[i] == END_SENTINEL)
-//			{
-//				es_pos_chars = i;
-//				lrc_pos_chars = i + 1; // Always after?
-//			}
-//		}
-	}
-	else
-		status = false;
-
-//	flag_invalid = es_pos_chars < fs_pos_chars || fs_pos_chars < ss_pos_bits;
-
-	return status;
-}
-
-static bool ParseData (void)
-{
-	bool status = true;
-	uint8_t i = 1, j = 0, stop = MAX_TRACK_SIZE - CHAR_LENGTH - 2; // Skip SS and stop at ES
-
-	do {
-		magCard.data.PAN[i - 1] = Bits2Char(track2 + i * 4);
-	} while(magCard.data.PAN[i++ - 1] != FIELD_SEPARATOR && i < MAX_PAN_LENGTH + 1);
-	magCard.data.PAN_length = i - 2; // If > 19?
-
-	if (magCard.data.PAN_length < MAX_PAN_LENGTH ||
-	   ((magCard.data.PAN_length == MAX_PAN_LENGTH) && (Bits2Char(track2 + i * 4) == FIELD_SEPARATOR)))
-	{
-		for (j = i; i < stop && i < j + EXPIRATION_LENGTH; i++)
-			magCard.additional_data.expiration[i] = Bits2Char(track2 + i * 4);
-
-		for (j = i; i < stop && i < j + SERVICE_CODE_LENGTH; i++)
-			magCard.additional_data.service_code[i] = Bits2Char(track2 + i * 4);
-
-		for (j = i; i < stop && i < j + PVKI_LENGTH; i++)
-			magCard.discretionary_data.PVKI = Bits2Char(track2 + i * 4);
-
-		for (j = i; i < stop && i < j + PVV_LENGTH; i++)
-			magCard.discretionary_data.PVV[i] = Bits2Char(track2 + i * 4);
-
-		for (j = i; i < stop && i < j + CVV_LENGTH; i++)
-			magCard.discretionary_data.CVV[i] = Bits2Char(track2 + i * 4);
-
-		magCard.LRC = data[++i];
+		uint8_t buffer = 0;
+		for (uint8_t i = 0; i < track2_length; i++)
+			buffer ^= rows[i];
+		
+		if (buffer)
+			status = false;
 	}
 	else
 		status = false;
@@ -316,39 +300,43 @@ static bool ParseData (void)
 	return status;
 }
 
-static char Bits2Char (bool bits[])
+static void ParseData (void)
+{
+	uint8_t i = 1; // Skip SS
+
+	i = __StoreChar__(i, magCard.data.PAN, magCard.data.PAN_length) + DATA_LENGTH; // Skip FS
+	i = __StoreChar__(i, magCard.additional_data.expiration, EXPIRATION_LENGTH);
+	i = __StoreChar__(i, magCard.additional_data.service_code, SERVICE_CODE_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.PVKI, PVKI_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.PVV, PVV_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.CVV, CVV_LENGTH) + DATA_LENGTH; // Skip ES
+	i = __StoreChar__(i, &magCard.LRC, 1);
+}
+
+// Helper Functions ////////////////////////////////////////////////////////////
+
+static char __Bits2Char__ (bool bits[])
 {
 	char buffer = 0;
-	for (uint8_t i = 0; i < 4; i++)
+	for (uint8_t i = 0; i < CHAR_LENGTH; i++)
 		buffer |= bits[i] << i;
 
 	return buffer;
 }
 
-//static bool CheckRowParity (char character, bool parity) // Transversal redundancy check
-//{
-//    uint8_t count = 0;
-//    for (uint8_t i = 0; i < CHAR_LENGTH; i++)
-//        count += (character >> i) & 1;
-//    return count % 2 != parity; // Parity bit is 1 if even
-//}
-//
-//static bool CheckColumnParity (void) // Longitudinal redundancy check
-//{
-//    uint8_t stop = es_pos_chars / 5 - 1; // Better if this is already calculated (to use chars instead of bits)
-//    bool status = true;
-//    for (uint8_t i = 0; i < 4; i++)
-//    {
-//        uint8_t count = data[i] & 1;
-//        for (uint8_t j = 0; j < stop; j += 4)
-//            count += (data[j] >> j) & 1;
-//        if (count % 2 != ((magCard.LRC >> i) & 1))
-//            status = false;
-//    }
-//    return status; // Parity bit is 1 if even
-//}
-
-static bool CheckParity (void)
+static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length) // Could be a MACRO?
 {
-	return 1;
+	for (uint8_t j = 0; track2_pos < track2_length && track2_pos < j + length; track2_pos+=DATA_LENGTH, j++)
+		field[j] = __Bits2Char__(track2 + track2_pos);
+
+	return track2_pos;
 }
+
+// Notes ///////////////////////////////////////////////////////////////////////
+
+// Reset function?
+// Initialization function or initialize here?
+// Store data until retrieved?
+// Check if data is valid before storing it?
+// Should Parse() check if data is valid even if parity and LRC is correct?
+// Search for FS needed?
