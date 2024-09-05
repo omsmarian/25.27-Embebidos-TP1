@@ -75,6 +75,7 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
   pisrRegister(directionCallback, 1);
+  pisrRegister(switchCallback, 10);
 
   return 0;
 }
@@ -82,7 +83,7 @@ bool encoder_Init(void)
 
 action_t encoderRead(void)
 {
-
+  return direction;
 }
 /*******************************************************************************
  *******************************************************************************
