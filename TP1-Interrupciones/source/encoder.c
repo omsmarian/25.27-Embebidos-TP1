@@ -43,6 +43,9 @@ typedef struct{
 * @brief Checks for encoder gesture
 */
 static void directionCallback(void);
+/**
+ * @brief Checks for switch gesture
+ */
 static void switchCallback(void);
 
 /*******************************************************************************
@@ -54,9 +57,7 @@ static void switchCallback(void);
  ******************************************************************************/
 
 static action_t direction;
-static bool RCHA;
-static bool RCHB;
-static bool RSWITCH;
+static state_flags_t encoder_state;
 static bool falling_edge;
 static bool switch_falling_edge;
 static bool long_click_detected;
@@ -74,8 +75,8 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-  pisrRegister(directionCallback, 1);
-  pisrRegister(switchCallback, 100);
+  pisrRegister(directionCallback, 1);   // 1 ms
+  pisrRegister(switchCallback, 100);    // 100 ms
 
   return 0;
 }
@@ -90,48 +91,45 @@ action_t encoderRead(void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
 /**********************************************
 * La joda de este padazo de codigo es q cada
 * vez q se llama guarda el estado de los pines
 **********************************************/
 static void directionCallback(void)
 {
-  RCHA = gpioRead(PIN_ENCODER_RCHA);
-  RCHB = gpioRead(PIN_ENCODER_RCHB);
+  encoder_state.RCHA = gpioRead(PIN_ENCODER_RCHA);
+  encoder_state.RCHB = gpioRead(PIN_ENCODER_RCHB);
 
-  if(!falling_edge)
+  if (!falling_edge)
   {
-    if(RCHA)
+    if (encoder_state.RCHA)
     {
-      if(!RCHB)   // Izquierda
-      {
-        direction = LEFT;
-        falling_edge = true;
-      }
-      else
-        direction = NONE;
+      direction = encoder_state.RCHB ? NONE : LEFT;
+      falling_edge = !encoder_state.RCHB;
     }
     else
-      if(RCHB)  // Derecha
-      {
-        direction = RIGHT;
-        falling_edge = true;
-      }
+    {
+      direction = encoder_state.RCHB ? RIGHT : NONE;
+      falling_edge = encoder_state.RCHB;
+    }
   }
   else
   {
-    if((RCHA == 1) && (RCHB == 1))
+    if (encoder_state.RCHA && encoder_state.RCHB)
+    {
       falling_edge = false;
+    }
   }
 }
 
 
 static void switchCallback(void)
 {
-  RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
+  encoder_state.RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
   if(!switch_falling_edge)
   {
-    if(!RSWITCH)
+    if(!encoder_state.RSWITCH)
     {
       switch_falling_edge = true;
       press_duration = 0;
@@ -140,7 +138,7 @@ static void switchCallback(void)
   else
   {
     press_duration++;
-    if(RSWITCH)
+    if(encoder_state.RSWITCH)
     {
       switch_falling_edge = false;
       if (press_duration >= LONG_CLICK_THRESHOLD)
