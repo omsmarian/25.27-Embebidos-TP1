@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE    1
+#define LONG_CLICK_THRESHOLD 1000
 
 
 /*******************************************************************************
@@ -41,7 +42,8 @@ typedef struct{
 /**
 * @brief Checks for encoder gesture
 */
-static void encoderCallback(void);
+static void directionCallback(void);
+static void switchCallback(void);
 
 /*******************************************************************************
  * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -56,6 +58,9 @@ bool RCHA;
 bool RCHB;
 bool RSWITCH;
 bool falling_edge;
+bool switch_falling_edge;
+bool long_click_detected;
+uint16_t press_duration;
 
 /*******************************************************************************
  *******************************************************************************
@@ -69,7 +74,7 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-  pisrRegister(encoderCallback, 1);
+  pisrRegister(directionCallback, 1);
 
   return 0;
 }
@@ -88,26 +93,66 @@ action_t encoderRead(void)
 * La joda de este padazo de codigo es q cada
 * vez q se llama guarda el estado de los pines
 **********************************************/
-static void encoderCallback(void)
+static void directionCallback(void)
 {
   RCHA = gpioRead(PIN_ENCODER_RCHA);
   RCHB = gpioRead(PIN_ENCODER_RCHB);
-  RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
 
   if(!falling_edge)
   {
     if(RCHA)
-      if(!RCHB)
+    {
+      if(!RCHB)   // derecha
       {
         direction = RIGHT;
         falling_edge = true;
       }
+      else
+        direction = NONE;
+    }
     else
+      if(RCHB)  // izquierda
+      {
+        direction = LEFT;
+        falling_edge = true;
+      }
   }
   else
   {
-
+    if((RCHA == 1) && (RCHB == 1))
+      falling_edge = false;
   }
 }
 
+
+static void switchCallback(void)
+{
+  RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
+  if(!switch_falling_edge)
+  {
+    if(!RSWITCH)
+    {
+      switch_falling_edge = true;
+      press_duration = 0;
+    }
+  }
+  else
+  {
+    press_duration++;
+    if(RSWITCH)
+    {
+      switch_falling_edge = false;
+      if (press_duration >= LONG_CLICK_THRESHOLD)
+      {
+          direction = LONG_CLICK;
+          long_click_detected = true;
+      }
+      else if (!long_click_detected)
+      {
+          direction = CLICK;
+      }
+      long_click_detected = false;
+    }
+  }
+}
 /******************************************************************************/
