@@ -53,14 +53,14 @@ static void switchCallback(void);
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-action_t direction;
-bool RCHA;
-bool RCHB;
-bool RSWITCH;
-bool falling_edge;
-bool switch_falling_edge;
-bool long_click_detected;
-uint16_t press_duration;
+static action_t direction;
+static bool RCHA;
+static bool RCHB;
+static bool RSWITCH;
+static bool falling_edge;
+static bool switch_falling_edge;
+static bool long_click_detected;
+static uint8_t press_duration;
 
 /*******************************************************************************
  *******************************************************************************
