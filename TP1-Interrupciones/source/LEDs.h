@@ -16,10 +16,7 @@
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
-#define NO_LED 0b00
-#define LED1 0b01
-#define LED2 0b10
-#define LED3 0b11
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -40,12 +37,11 @@
  */
 bool LEDS_Init(void);
 
-
 /**
- * @brief Turn on the LEDS
- * @param ledNumber the number of the LED to turn on
+ * @brief indicates which LEDs to turn on
+ * @param num is a binari number of 3 bits. 
  */
-void LEDS_On(uint8_t ledNumber);
+void LEDS_Set(uint8_t num);
 
 
 /*******************************************************************************
