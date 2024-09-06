@@ -65,16 +65,16 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-__ISR__ SysTick_Handler(void)
-{
-	for(int i = 0; i < count ; i++)
-	{
-		if(--((funArr[i]).counter) == 0)
-		{
-			(funArr[i]).funadrrs();
-			(funArr[i]).counter = (funArr[i]).time;
-		}
-	}
-}
-
-/******************************************************************************/
+//__ISR__ SysTick_Handler(void)
+//{
+//	for(int i = 0; i < count ; i++)
+//	{
+//		if(--((funArr[i]).counter) == 0)
+//		{
+//			(funArr[i]).funadrrs();
+//			(funArr[i]).counter = (funArr[i]).time;
+//		}
+//	}
+//}
+//
+///******************************************************************************/

@@ -1,93 +1,65 @@
-/***************************************************************************//**
-  @file     SysTick.c
-  @brief    SysTick driver
-  @author   Grupo 4
- ******************************************************************************/
-
-/*******************************************************************************
- * INCLUDE HEADER FILES
- ******************************************************************************/
+/*
+ * SysTick.c
+ *
+ *  Created on: 19 ago 2024
+ *      Author: asolari
+ */
 
 #include "SysTick.h"
 #include "hardware.h"
-
+#include "fsl_clock.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE    1
-
-#define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__/SYSTICK_ISR_FREQUENCY_HZ) - 1U)
-
-#if SYSTICK_LOAD_INIT > (1<<24)
-#error Overflow de SysTick! Ajustar  __CORE_CLOCK__ y SYSTICK_ISR_FREQUENCY_HZ!
-#endif // SYSTICK_LOAD_INIT > (1<<24)
-
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
- ******************************************************************************/
+ */
 
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
- ******************************************************************************/
+ * ******************************************************************************/
+static uint32_t ticksCounter = 0;
 
-/*******************************************************************************
- * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-/*******************************************************************************
- * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-/*******************************************************************************
- * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-static void (*systick_callback)(void);
+#define CALLBACK_QUANTITY 20
+static SysTick_Callback_t arr_funcallback[CALLBACK_QUANTITY];
+static uint32_t numOfCallbacks = 0;
 
 
-/*******************************************************************************
- *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
- *******************************************************************************
- ******************************************************************************/
 
-bool SysTick_Init(void (*funcallback)(void))
+bool SysTick_Init (uint32_t numOfInterruptions, ...)
 {
-    static bool yaInit = false;
-#if DEVELOPMENT_MODE
-    if (!yaInit && funcallback)
-#endif // DEVELOPMENT_MODE
-    {
-        SysTick->CTRL = 0x00;
-        SysTick->LOAD = SYSTICK_LOAD_INIT;
-        SysTick->VAL  = 0x00;
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+	SysTick->CTRL = 0; // Disable SysTick
+	SysTick->LOAD = (CLOCK_GetFreq(kCLOCK_CoreSysClk) / SYSTICK_ISR_FREQUENCY_HZ) - 1; // Set reload register
+	SysTick->VAL = 0; // Reset counter
+	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk; // Enable SysTick
 
-        systick_callback = funcallback;
-        yaInit = true;
-    }
-    return yaInit;
+
+	numOfCallbacks = numOfInterruptions;
+	va_list args;
+	va_start(args, numOfInterruptions);
+	for (uint32_t i = 0; i < numOfInterruptions; i++) {
+		// Register callback
+		arr_funcallback[i]= va_arg(args, SysTick_Callback_t);
+		if(i>=CALLBACK_QUANTITY)
+		{
+			break;
+		}
+	}
+	va_end(args);
+
+
+	return true;
 }
-
-
-/*******************************************************************************
- *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
- *******************************************************************************
- ******************************************************************************/
 
 __ISR__ SysTick_Handler(void)
 {
-#if DEVELOPMENT_MODE
-    if (systick_callback)
-#endif // DEVELOPMENT_MODE
-    {
-        systick_callback();
-    }
+	ticksCounter++; // Increment counter of callbacks
+	for(uint32_t i = 0; i < numOfCallbacks; i++)
+	{
+		if (ticksCounter % arr_funcallback[i].numTicks == 0 && arr_funcallback[i].funcallback != NULL) {
+			arr_funcallback[i].funcallback();
+		}
+	}
 }
-
-
-/******************************************************************************/
