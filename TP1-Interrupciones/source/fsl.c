@@ -9,9 +9,6 @@ static uint8_t state = ADD_USER;
 
 
 
-
-
-
 void init_fsl()
 {
 	state = ADD_USER;
