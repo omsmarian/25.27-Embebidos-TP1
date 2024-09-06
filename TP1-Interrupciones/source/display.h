@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     display.h
   @brief    Display driver
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _DISPLAY_H_
@@ -12,21 +12,20 @@
  ******************************************************************************/
 
 #include <stdbool.h>
+#include <stdint.h>
+
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-/***** DISPLAY defines **********************************************************/
+#define DISPLAY_LENGTH			4
 
+#define DISPLAY_FREQUENCY_HZ	50
 
-/*******************************************************************************
- * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
- ******************************************************************************/
+#define MIN_BRIGHTNESS			0
+#define MAX_BRIGHTNESS			100
 
-/*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -37,28 +36,28 @@
  * @param
  * @return
  */
-bool displayInit (void);
+bool DisplayInit (void);
 
 /**
  * @brief
  * @param
  * @return
  */
-bool displayWrite (void);
+void DisplayWrite (char characters[]);
 
 /**
  * @brief
  * @param
  * @return
  */
-bool displayClear (void);
+void DisplayClear (void);
 
 /**
  * @brief
  * @param
  * @return
  */
-bool display_SetBrightness (void);
+void DisplaySetBrightness (uint8_t brightness);
 
 
 /*******************************************************************************

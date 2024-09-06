@@ -10,6 +10,8 @@
 
 #include "board.h"
 #include "encoder.h"
+#include "display.h"
+#include "magcard.h"
 //#include "fsl_debug_console.h"
 
 /*******************************************************************************
