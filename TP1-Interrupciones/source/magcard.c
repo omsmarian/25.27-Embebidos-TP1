@@ -31,9 +31,9 @@
 #define FIELD_SEPARATOR	        0xD
 #define END_SENTINEL	        0xF
 
-#define BITROLL_LEFT(x, b)		(x = ((x << 1) & 0xF) | (b & 1));
-#define BITROLL_RIGHT(x, b)		(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)));
-
+#define BITROLL_LEFT(x, b)		(x = ((x << 1) & 0xF) | (b & 1))
+#define BITROLL_RIGHT(x, b)		(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)))
+#define CAP(x, min, max)		(x = (x < (min) ? (min) : (x > (max) ? (max) : x)))
 #define CHAR2ASCII(c)			(c + 48)
 
 
@@ -47,7 +47,7 @@ typedef enum {
 	WAITING_SS,
 	READING,
 	PROCESSING,
-	VALID_DATA_AVAILABLE,
+	DATA_READY,
 } MagCardState_t;
 
 typedef enum {
@@ -73,6 +73,7 @@ static void             ReadBit	    	(void);
 static bool             CheckParity 	(void);
 static void             ParseData   	(void);
 static char             __Bits2Char__   (bool bits[]);
+//static uint8_t          __StoreBits__   (uint8_t track2_pos, char data[], uint8_t length);
 static uint8_t          __StoreChar__   (uint8_t track2_pos, char data[], uint8_t length);
 
 
@@ -89,6 +90,7 @@ static MagCard_t		magCard;
 static MagCardState_t	state						= OFF;
 //static MagCardEvent_t	event						= NONE;
 
+static bool				ready						= false;
 
 /*******************************************************************************
  *******************************************************************************
@@ -96,15 +98,9 @@ static MagCardState_t	state						= OFF;
  *******************************************************************************
  ******************************************************************************/
 
-//bool MagCardGetStatus (void) // return if data was read or only if it was valid?
-//{
-//	FSM(GET_STATUS);
-//
-//	return state == VALID_DATA_AVAILABLE;
-//}
-
 bool                            MagCardInit                 (void) { return !FSM(INIT); } // OFF: 0
-bool                            MagCardGetStatus            (void) { return magCard.valid && state == IDLE; }
+//bool                            MagCardGetStatus            (void) { return FSM(GET_STATUS) == DATA_READY; }
+bool                            MagCardGetStatus            (void) { return FSM(GET_STATUS) == IDLE && ready; }
 
 // Complete Data Access
 
@@ -123,7 +119,6 @@ char *							MagCardGetPVKI				(void) { return magCard.discretionary_data.PVKI; 
 char *							MagCardGetPVV				(void) { return magCard.discretionary_data.PVV; }
 char *							MagCardGetCVV				(void) { return magCard.discretionary_data.CVV; }
 char							MagCardGetLRC				(void) { return magCard.LRC; }
-//bool							MagCardIsValid				(void) { return magCard.valid; }
 
 
 /*******************************************************************************
@@ -137,25 +132,19 @@ static MagCardState_t FSM (MagCardEvent_t event)
 	switch (state)
 	{
 		case OFF:
-			if (event == INIT && Init())
-				state = IDLE;
-
+			if (event == INIT && Init()) { state = IDLE; }
 			break;
 
 		case IDLE:
 			if (event == ENABLE_FallingEdge)
 			{
 				state = WAITING_SS;
-				magCard.valid = false;
 				index = 0;
+				ready = false;
 			}
-//			if (event == GET_STATUS)
-//				state = VALID_DATA_AVAILABLE; // This depends on what happens to the data
-//											  // if another swipe occurs before it was read from App()
-
 			break;
 
-		case WAITING_SS: // Same as READING but without storing data
+		case WAITING_SS: // Same as READING but without storing data (only SS if found)
 			if (event == CLOCK_FallingEdge)
 			{
 				static char buffer = 0;
@@ -171,53 +160,20 @@ static MagCardState_t FSM (MagCardEvent_t event)
 				}
 				else
 					index = 0;
-
-//				__Bits2Char__(track2);
-//
-//				bool flag = false;
-//				for (uint8_t i = 0; i < CHAR_LENGTH && flag; i++)
-//					flag = (START_SENTINEL & (1 << i)) >> i == track2[i];
-//				if (flag)
-//					state = READING;
-//
-//				char buffer = 0;
-//				while (i < CHAR_LENGTH && buffer != START_SENTINEL) // Search for SS
-//					buffer = ((buffer >> 1) & 0xF) | (track2[i++] << (CHAR_LENGTH - 1));
-//				if (buffer == START_SENTINEL)
-//					state = READING;
 			}
-			else if (event == ENABLE_RisingEdge)
-				state = IDLE;
-
+			else if (event == ENABLE_RisingEdge) { state = IDLE; }
 			break;
 
 		case READING:
 			if (event == CLOCK_FallingEdge)
 			{
 				ReadBit();
-				if (index > MAX_TRACK_SIZE)
-					index = MAX_TRACK_SIZE;
-
+				CAP(index, 0, MAX_TRACK_SIZE);
 			}
-			else if (event == ENABLE_RisingEdge)
-				state = PROCESSING;
-
+			else if (event == ENABLE_RisingEdge) { state = PROCESSING; }
 			break;
 
 		case PROCESSING:
-////			if (CleanData())
-////			{
-//			if (CleanData() && (magCard.valid = CheckParity()) )
-//				ParseData();
-////			if (CheckParity())
-////				state = VALID_DATA_AVAILABLE;
-////			else
-////				state = IDLE; // If data is ready, should it wait for it to be accessed or continue reading?
-////				magCard.valid = CheckParity();
-////			}
-//			else
-//				magCard.valid = false;
-
 			uint8_t i = 0, buffer = 0;
 			do { buffer = __Bits2Char__(track2 + i * DATA_LENGTH); }
 			while (i++ < MAX_TRACK_SIZE && buffer != FIELD_SEPARATOR); // Search for FS
@@ -233,34 +189,28 @@ static MagCardState_t FSM (MagCardEvent_t event)
 				if(i < MAX_CHARS) // LRC included
 				{
 					track2_length = (i + 1) * DATA_LENGTH;
-					magCard.valid = CheckParity();
-					if (magCard.valid)
+					
+					if (CheckParity())
+					{
 						ParseData();
+//						state = DATA_READY;
+						ready = true;
+						state = IDLE;
+					}
+					else
+						state = IDLE;
 				}
 			}
 			else
-				magCard.valid = false;
-
-			state = IDLE;
-
+				state = IDLE;
 			break;
 
-//		case VALID_DATA_AVAILABLE: // Maybe a flag would be better
-//			if (event == DATA_ACCESSED)
-//				state = IDLE;
-//
+//		case DATA_READY:
+//			if (event == ENABLE_FallingEdge) { state = IDLE; }
 //			break;
-
-//			case VALID_DATA_AVAILABLE:
-//				if (event == DATA_ACCESSED)
-//					state = IDLE;
-//				else if (event = ENABLE_FallingEdge)
-//
-//				break;
 
 		default:
 			state = OFF;
-
 			break;
 	}
 
@@ -271,8 +221,6 @@ static bool Init (void)
 {
 	bool status = true;
 
-	magCard.valid = false;
-
 	gpioMode(PIN_MAGCARD_ENABLE, INPUT);
 	gpioMode(PIN_MAGCARD_CLOCK, INPUT);
 	gpioMode(PIN_MAGCARD_DATA, INPUT);
@@ -281,12 +229,28 @@ static bool Init (void)
 	if (status)
 		status = !gpioIRQ(PIN_MAGCARD_CLOCK, GPIO_IRQ_MODE_FALLING_EDGE, ReadClock);
 
-	return status; // Should return 1 if there was an error...
+	return status;
 }
 
 static void ReadEnable  (void) { FSM(!gpioRead(PIN_MAGCARD_ENABLE) ? ENABLE_FallingEdge : ENABLE_RisingEdge); }
 static void ReadClock   (void) { FSM(CLOCK_FallingEdge); }
 static void ReadBit     (void) { track2[index++] = !gpioRead(PIN_MAGCARD_DATA); } // Data is inverted
+
+// static bool FindSentinel (uint8_t sentinel)
+// {
+// 	bool status = false;
+
+// 	uint8_t i = 0, buffer = 0;
+// 	do { buffer = __Bits2Char__(track2 + i * DATA_LENGTH); }
+// 	while (i++ < MAX_TRACK_SIZE && buffer != sentinel);
+
+// 	if (buffer == sentinel)
+// 		status = true;
+
+// 	return status;
+// }
+
+// static bool FindSS (void) { return FindSentinel(START_SENTINEL); }
 
 static bool CheckParity (void)
 {
@@ -345,6 +309,14 @@ static char __Bits2Char__ (bool bits[])
 	return buffer;
 }
 
+// static uint8_t __StoreBits__ (uint8_t track2_pos, char field[], uint8_t length)
+// {
+// 	for (uint8_t j = 0; track2_pos < track2_length && j < length; track2_pos++, j++)
+// 		field[j] = __Bits2Char__(track2 + track2_pos);
+
+// 	return track2_pos;
+// }
+
 static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length)
 {
 	for (uint8_t j = 0; track2_pos < track2_length && j < length; track2_pos+=DATA_LENGTH, j++)
@@ -363,3 +335,6 @@ static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length)
 // Search for FS needed?
 // Some of the xxxxx < track_length, etc. are not needed (after validation), but its safer this way
 // How to distinguish discretionary data?
+// Return data if it was read or only if it was valid?
+// Should it wait for data to be accessed or continue reading?
+// DATA_READY state needed?

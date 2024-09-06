@@ -20,12 +20,6 @@
 
 #define DEVELOPMENT_MODE    1
 
-#define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__/SYSTICK_ISR_FREQUENCY_HZ) - 1U)
-
-#if SYSTICK_LOAD_INIT > (1<<24)
-#error Overflow de SysTick! Ajustar  __CORE_CLOCK__ y SYSTICK_ISR_FREQUENCY_HZ!
-#endif // SYSTICK_LOAD_INIT > (1<<24)
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -65,7 +59,7 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 
 	if (!init_flag) // Already initialized
 	{
-		SysTick_Init(pisr);
+		SysTick_Init(pisr, PISR_FREQUENCY_HZ);
 		for (uint8_t i = 0; i < PISR_CANT; i++)
 			pisr_callbacks[i].callback = NULL;
 		init_flag = true;
@@ -73,7 +67,7 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 
 	for (uint8_t i = 0; i < PISR_CANT; i++)
 	{
-		if (!pisr_callbacks[i].callback)
+		if (pisr_callbacks[i].callback != NULL)
 		{
 			pisr_callbacks[i].callback = fun;
 			pisr_callbacks[i].period = pisr_callbacks[i].counter = period;
@@ -82,20 +76,6 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 	}
 
 	return init_flag && status;
-}
-
-bool pisrClear (void (*funcallback)(void))
-{
-	bool status = false;
-
-	for (uint8_t i = 0; i < PISR_CANT; i++)
-		if (pisr_callbacks[i].callback == funcallback)
-		{
-			pisr_callbacks[i].callback = NULL;
-			status = true;
-		}
-
-	return status;
 }
 
 

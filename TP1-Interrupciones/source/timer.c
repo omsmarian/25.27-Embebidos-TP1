@@ -16,9 +16,9 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#if TIMER_TICK_MS != (1000U/SYSTICK_ISR_FREQUENCY_HZ)
-#error Las frecuencias no coinciden!!
-#endif // TIMER_TICK_MS != (1000U/SYSTICK_ISR_FREQUENCY_HZ)
+//#if TIMER_TICK_MS != (5000U/SYSTICK_ISR_FREQUENCY_HZ)
+//#error Las frecuencias no coinciden!!
+//#endif // TIMER_TICK_MS != (5000U/SYSTICK_ISR_FREQUENCY_HZ)
 
 #define TIMER_DEVELOPMENT_MODE    1
 
@@ -70,7 +70,7 @@ void timerInit(void)
     if (yaInit)
         return;
     
-    SysTick_Init(timer_isr); // init peripheral
+    SysTick_Init(timer_isr, 1 / TIMER_TICK_MS); // init peripheral
     
     yaInit = true;
 }

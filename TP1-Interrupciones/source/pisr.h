@@ -19,7 +19,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PISR_FREQUENCY_HZ	1000U
+#define PISR_FREQUENCY_HZ	20000U
 
 #define PISR_CANT			8
 
@@ -43,7 +43,6 @@ typedef void (*pisr_callback_t) (void);
  */
 bool pisrRegister (pisr_callback_t fun, unsigned int period);
 
-bool pisrClear (void (*funcallback)(void));
 
 /*******************************************************************************
  ******************************************************************************/

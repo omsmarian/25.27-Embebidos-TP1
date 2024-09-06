@@ -19,7 +19,12 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DISPLAY_LENGTH      4
+#define DISPLAY_LENGTH			4
+
+#define DISPLAY_FREQUENCY_HZ	50
+
+#define MIN_BRIGHTNESS			0
+#define MAX_BRIGHTNESS			100
 
 
 /*******************************************************************************

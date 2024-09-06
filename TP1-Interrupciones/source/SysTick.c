@@ -16,13 +16,9 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE    1
+#define DEVELOPMENT_MODE		1
 
-#define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__/SYSTICK_ISR_FREQUENCY_HZ) - 1U)
-
-#if SYSTICK_LOAD_INIT > (1<<24)
-#error Overflow de SysTick! Ajustar  __CORE_CLOCK__ y SYSTICK_ISR_FREQUENCY_HZ!
-#endif // SYSTICK_LOAD_INIT > (1<<24)
+#define SYSTICK_LOAD_INIT(freq) ((__CORE_CLOCK__/freq) - 1U)
 
 
 /*******************************************************************************
@@ -34,43 +30,45 @@ static void (*systick_callback)(void);
 
 /*******************************************************************************
  *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
+						GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-bool SysTick_Init(void (*funcallback)(void))
+bool SysTick_Init(void (*funcallback)(void), uint32_t freq)
 {
-    static bool yaInit = false;
+	// SysTick_Config(SYSTICK_LOAD_INIT);
+	static bool yaInit = false;
 #if DEVELOPMENT_MODE
-    if (!yaInit && funcallback)
+	if (!yaInit && funcallback && SYSTICK_LOAD_INIT(freq) < SysTick_LOAD_RELOAD_Msk)
 #endif // DEVELOPMENT_MODE
-    {
-        SysTick->CTRL = 0x00;
-        SysTick->LOAD = SYSTICK_LOAD_INIT;
-        SysTick->VAL  = 0x00;
-        SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
+	{
+		SysTick->CTRL = 0x00;
+		SysTick->LOAD = SYSTICK_LOAD_INIT(freq);
+		// NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);
+		SysTick->VAL  = 0x00;
+		SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk | SysTick_CTRL_ENABLE_Msk;
 
-        systick_callback = funcallback;
-        yaInit = true;
-    }
-    return yaInit;
+		systick_callback = funcallback;
+		yaInit = true;
+	}
+	return yaInit;
 }
 
 
 /*******************************************************************************
  *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
+						LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
 __ISR__ SysTick_Handler(void)
 {
 #if DEVELOPMENT_MODE
-    if (systick_callback)
+	if (systick_callback)
 #endif // DEVELOPMENT_MODE
-    {
-        systick_callback();
-    }
+	{
+		systick_callback();
+	}
 }
 
 
