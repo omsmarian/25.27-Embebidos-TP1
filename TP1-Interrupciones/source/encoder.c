@@ -86,9 +86,10 @@ bool encoder_Init(void)
 
 encoder_data_t encoderRead(void)
 {
-  uint16_t j = 0;
+  encoder_data_t exit_value;
   uint16_t aux = value.action_counter;
-  uint16_t auxArr[3];
+  value.action_counter = 0;
+  uint16_t auxArr[3] = {0, 0, 0};
   encoder_data_t buffer[MAX_BUFFER_SIZE];
   for(int i = 0; i < aux; i++)
   {
@@ -97,34 +98,31 @@ encoder_data_t encoderRead(void)
     else if(arr[i].direction == RIGHT)
       auxArr[0]--;
     else if(arr[i].direction == CLICK)
-    {
-      auxArr[CLICK]++;
-      if(auxArr[0] > 0)
-      {
-        buffer[j].direction = LEFT;
-        buffer[j++].action_counter = auxArr[0];
-      }
-      else if(auxArr[0] < 0)
-      {
-        buffer[j].direction = RIGHT;
-        buffer[j++].action_counter = -auxArr[0];
-      }
-    }
+      auxArr[1]++;
     else if(arr[i].direction == LONG_CLICK)
-      auxArr[LONG_CLICK]++;
+      auxArr[2]++;
   }
-  // encoder_data_t aux = value;
-  // value.action_counter = 0;
-  // if(aux.action_counter > 0)
-  // {
-  //   aux.direction = RIGHT;
-  // }
-  // else if(aux.action_counter < 0)
-  // {
-  //   aux.direction = LEFT;
-  //   aux.action_counter = -aux.action_counter;
-  // }
-  // return aux;
+  if(auxArr[0] > 0)
+  {
+    exit_value.direction = RIGHT;
+    exit_value.action_counter = auxArr[0];
+  }
+  else if(auxArr[0] < 0)
+  {
+    exit_value.direction = LEFT;
+    exit_value.action_counter = -auxArr[0];
+  }
+  else if(auxArr[1] > 0)
+  {
+    exit_value.direction = CLICK;
+    exit_value.action_counter = auxArr[1];
+  }
+  else if(auxArr[2] > 0)
+  {
+    exit_value.direction = LONG_CLICK;
+    exit_value.action_counter = auxArr[2];
+  }
+  return exit_value;
 }
 /*******************************************************************************
  *******************************************************************************
