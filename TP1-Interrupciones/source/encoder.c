@@ -20,6 +20,7 @@
 #define DEVELOPMENT_MODE    1
 #define LONG_CLICK_THRESHOLD 15
 #define MAX_BUFFER_SIZE 256
+#define MAX_STATES 4
 
 
 /*******************************************************************************
@@ -85,11 +86,32 @@ bool encoder_Init(void)
 
 encoder_data_t encoderRead(void)
 {
+  uint16_t j = 0;
   uint16_t aux = value.action_counter;
+  uint16_t auxArr[3];
+  encoder_data_t buffer[MAX_BUFFER_SIZE];
   for(int i = 0; i < aux; i++)
   {
-    if()
-    
+    if(arr[i].direction == LEFT)
+      auxArr[0]++;
+    else if(arr[i].direction == RIGHT)
+      auxArr[0]--;
+    else if(arr[i].direction == CLICK)
+    {
+      auxArr[CLICK]++;
+      if(auxArr[0] > 0)
+      {
+        buffer[j].direction = LEFT;
+        buffer[j++].action_counter = auxArr[0];
+      }
+      else if(auxArr[0] < 0)
+      {
+        buffer[j].direction = RIGHT;
+        buffer[j++].action_counter = -auxArr[0];
+      }
+    }
+    else if(arr[i].direction == LONG_CLICK)
+      auxArr[LONG_CLICK]++;
   }
   // encoder_data_t aux = value;
   // value.action_counter = 0;
