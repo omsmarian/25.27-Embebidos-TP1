@@ -19,6 +19,7 @@
 
 #define DEVELOPMENT_MODE    1
 #define LONG_CLICK_THRESHOLD 15
+#define MAX_BUFFER_SIZE 256
 
 
 /*******************************************************************************
@@ -43,6 +44,9 @@ typedef struct{
 * @brief Checks for encoder gesture
 */
 static void directionCallback(void);
+/**
+ * @brief Checks for switch gesture
+ */
 static void switchCallback(void);
 
 /*******************************************************************************
@@ -52,11 +56,9 @@ static void switchCallback(void);
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-
-static action_t direction;
-static bool RCHA;
-static bool RCHB;
-static bool RSWITCH;
+static encoder_data_t value;
+static encoder_data_t arr[MAX_BUFFER_SIZE];
+static state_flags_t encoder_state;
 static bool falling_edge;
 static bool switch_falling_edge;
 static bool long_click_detected;
@@ -74,64 +76,86 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-  pisrRegister(directionCallback, 1);
-  pisrRegister(switchCallback, 100);
-
-  return 0;
+  if(pisrRegister(directionCallback, 1) && pisrRegister(switchCallback, 100))
+    return 1;
+  else
+    return 0;
 }
 
 
-action_t encoderRead(void)
+encoder_data_t encoderRead(void)
 {
-  return direction;
+  uint16_t aux = value.action_counter;
+  for(int i = 0; i < aux; i++)
+  {
+    if()
+    
+  }
+  // encoder_data_t aux = value;
+  // value.action_counter = 0;
+  // if(aux.action_counter > 0)
+  // {
+  //   aux.direction = RIGHT;
+  // }
+  // else if(aux.action_counter < 0)
+  // {
+  //   aux.direction = LEFT;
+  //   aux.action_counter = -aux.action_counter;
+  // }
+  // return aux;
 }
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
+
 /**********************************************
 * La joda de este padazo de codigo es q cada
 * vez q se llama guarda el estado de los pines
 **********************************************/
 static void directionCallback(void)
 {
-  RCHA = gpioRead(PIN_ENCODER_RCHA);
-  RCHB = gpioRead(PIN_ENCODER_RCHB);
+  encoder_state.RCHA = gpioRead(PIN_ENCODER_RCHA);
+  encoder_state.RCHB = gpioRead(PIN_ENCODER_RCHB);
 
-  if(!falling_edge)
+  if (!falling_edge)
   {
-    if(RCHA)
+    if (encoder_state.RCHA)
     {
-      if(!RCHB)   // Izquierda
+      if(!encoder_state.RCHB)
       {
-        direction = LEFT;
         falling_edge = true;
+        value.action_counter++;
+        arr[value.action_counter].direction = LEFT;
       }
-      else
-        direction = NONE;
     }
     else
-      if(RCHB)  // Derecha
+    {
+      if(encoder_state.RCHB)
       {
-        direction = RIGHT;
         falling_edge = true;
+        value.action_counter++;
+        arr[value.action_counter].direction = RIGHT;
       }
+    }
   }
   else
   {
-    if((RCHA == 1) && (RCHB == 1))
+    if (encoder_state.RCHA && encoder_state.RCHB)
+    {
       falling_edge = false;
+    }
   }
 }
 
 
 static void switchCallback(void)
 {
-  RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
+  encoder_state.RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
   if(!switch_falling_edge)
   {
-    if(!RSWITCH)
+    if(!encoder_state.RSWITCH)
     {
       switch_falling_edge = true;
       press_duration = 0;
@@ -140,17 +164,19 @@ static void switchCallback(void)
   else
   {
     press_duration++;
-    if(RSWITCH)
+    if(encoder_state.RSWITCH)
     {
       switch_falling_edge = false;
       if (press_duration >= LONG_CLICK_THRESHOLD)
       {
-          direction = LONG_CLICK;
+          value.action_counter++;
+          arr[value.action_counter].direction = LONG_CLICK;
           long_click_detected = true;
       }
       else if (!long_click_detected)
       {
-          direction = CLICK;
+        value.action_counter++;
+        arr[value.action_counter].direction = CLICK;
       }
       long_click_detected = false;
     }
