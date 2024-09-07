@@ -87,10 +87,10 @@ bool DisplayInit (void)
 	return init_flag;
 }
 
-void DisplayWrite (char characters[])
+void DisplayWrite (uint8_t characters[])
 {
 	for (uint8_t i = 0; i < DISPLAY_LENGTH; i++)
-		display_buffer[i] = characters[i];
+		display_buffer[i] = CAP(characters[i], 0, 10);
 }
 
 void DisplayClear (void)

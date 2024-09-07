@@ -19,22 +19,23 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE        1
+#define DEVELOPMENT_MODE		1
 
-#define MAX_CHARS		        (MAX_PAN_LENGTH + \
+#define MAX_CHARS				(MAX_PAN_LENGTH + \
 								 EXPIRATION_LENGTH + SERVICE_CODE_LENGTH + \
 								 PVKI_LENGTH + PVV_LENGTH + CVV_LENGTH + UNUSED_SPACE + 4)
-#define DATA_LENGTH		        (CHAR_LENGTH + PARITY_LENGTH)
-#define MAX_TRACK_SIZE	        (DATA_LENGTH * MAX_CHARS)
+#define DATA_LENGTH				(CHAR_LENGTH + PARITY_LENGTH)
+#define MAX_TRACK_SIZE			(DATA_LENGTH * MAX_CHARS)
 
-#define START_SENTINEL	        0xB
-#define FIELD_SEPARATOR	        0xD
-#define END_SENTINEL	        0xF
+#define START_SENTINEL			0xB
+#define FIELD_SEPARATOR			0xD
+#define END_SENTINEL			0xF
 
 #define BITROLL_LEFT(x, b)		(x = ((x << 1) & 0xF) | (b & 1))
 #define BITROLL_RIGHT(x, b)		(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)))
 #define CAP(x, min, max)		(x = (x < (min) ? (min) : (x > (max) ? (max) : x)))
 #define CHAR2ASCII(c)			(c + 48)
+#define ASCII2CHAR(c)			(c - 48)
 
 
 /*******************************************************************************
@@ -65,16 +66,17 @@ typedef enum {
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static MagCardState_t   FSM		    	(MagCardEvent_t event);
-static bool             Init	    	(void);
-static void             ReadEnable  	(void);
-static void             ReadClock   	(void);
-static void             ReadBit	    	(void);
-static bool             CheckParity 	(void);
-static void             ParseData   	(void);
-static char             __Bits2Char__   (bool bits[]);
-//static uint8_t          __StoreBits__   (uint8_t track2_pos, char data[], uint8_t length);
-static uint8_t          __StoreChar__   (uint8_t track2_pos, char data[], uint8_t length);
+static MagCardState_t	FSM				(MagCardEvent_t event);
+static bool				Init			(void);
+static void				ReadEnable		(void);
+static void				ReadClock		(void);
+static void				ReadBit			(void);
+static bool				CheckParity		(void);
+static void				ParseData		(void);
+static char				__Bits2Char__	(bool bits[]);
+//static uint8_t		__StoreBits__	(uint8_t track2_pos, char data[], uint8_t length);
+static uint8_t			__StoreChar__	(uint8_t track2_pos, char data[], uint8_t length);
+static uint64_t			__CharsToNum__	(char chars[], uint8_t length);
 
 
 /*******************************************************************************
@@ -98,16 +100,17 @@ static bool				ready						= false;
  *******************************************************************************
  ******************************************************************************/
 
-bool                            MagCardInit                 (void) { return !FSM(INIT); } // OFF: 0
-//bool                            MagCardGetStatus            (void) { return FSM(GET_STATUS) == DATA_READY; }
-bool                            MagCardGetStatus            (void) { return FSM(GET_STATUS) == IDLE && ready; }
+bool							MagCardInit					(void) { return !FSM(INIT); } // OFF: 0
+//bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == DATA_READY; }
+bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == IDLE && ready; }
+uint64_t						MagCardGetCardNumber		(void) { return __CharsToNum__(magCard.data.PAN, magCard.data.PAN_length); }
 
 // Complete Data Access
 
 MagCard_t *						MagCardGetData				(void) { return &magCard; }
 MagCardData_t *					MagCardGetPANData			(void) { return &magCard.data; }
 MagCardAdditionalData_t *		MagCardGetAdditionalData	(void) { return &magCard.additional_data; }
-MagCardDiscretionaryData_t *    MagCardGetDiscretionaryData	(void) { return &magCard.discretionary_data; }
+MagCardDiscretionaryData_t *	MagCardGetDiscretionaryData	(void) { return &magCard.discretionary_data; }
 
 // Direct Field Access
 
@@ -323,6 +326,15 @@ static uint8_t __StoreChar__ (uint8_t track2_pos, char field[], uint8_t length)
 		field[j] = CHAR2ASCII(__Bits2Char__(track2 + track2_pos));
 
 	return track2_pos;
+}
+
+static uint64_t __CharsToNum__ (char chars[], uint8_t length)
+{
+	uint64_t buffer = 0;
+	for (uint8_t i = 0; i < length; i++)
+		buffer = buffer * 10 + ASCII2CHAR(chars[i]);
+
+	return buffer;
 }
 
 // Notes ///////////////////////////////////////////////////////////////////////

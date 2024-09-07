@@ -43,7 +43,7 @@ bool DisplayInit (void);
  * @param
  * @return
  */
-void DisplayWrite (char characters[]);
+void DisplayWrite (uint8_t characters[]);
 
 /**
  * @brief
