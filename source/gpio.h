@@ -46,9 +46,7 @@
  ******************************************************************************/
 
 typedef uint8_t pin_t;
-
 typedef bool bit_t;
-
 typedef uint8_t byte_t;
 
 typedef struct
@@ -70,8 +68,7 @@ enum {
     GPIO_IRQ_CANT_MODES
 };
 
-typedef enum
-{
+typedef enum {
 	PORT_mAnalog,
 	PORT_mGPIO,
 	PORT_mAlt2,
@@ -82,8 +79,7 @@ typedef enum
 	PORT_mAlt7,
 } PORTMux_t;
 
-typedef enum
-{
+typedef enum {
 	PORT_eDisabled				= 0x00,
 	PORT_eDMARising				= 0x01,
 	PORT_eDMAFalling			= 0x02,
@@ -121,7 +117,7 @@ bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun);
 /**
  * @brief Write a HIGH or a LOW value to a digital pin
  * @param pin the pin to write (according PORTNUM2PIN)
- * @param val Desired value (HIGH or LOW)
+ * @param value Desired value (HIGH or LOW)
  */
 void gpioWrite (pin_t pin, bool value);
 

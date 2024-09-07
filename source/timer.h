@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     timer.h
   @brief    Timer driver. Advance implementation
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _TIMER_H_
@@ -41,10 +41,6 @@ typedef void (*tim_callback_t)(void);
 
 
 /*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
-
-/*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
@@ -54,7 +50,7 @@ typedef void (*tim_callback_t)(void);
 void timerInit(void);
 
 
-// Non-Blocking services ////////////////////////////////////////////////
+// Non-Blocking services ///////////////////////////////////////////////////////
 
 /**
  * @brief Request a timer
@@ -88,7 +84,7 @@ void timerStop(tim_id_t id);
 bool timerExpired(tim_id_t id);
 
 
-// Blocking services ////////////////////////////////////////////////
+// Blocking services ///////////////////////////////////////////////////////////
 
 /**
  * @brief Wait the specified time. Use internal timer

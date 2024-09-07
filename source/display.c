@@ -12,6 +12,7 @@
 #include "board.h"
 #include "gpio.h"
 #include "pisr.h"
+#include "macros.h"
 
 
 /*******************************************************************************
@@ -23,9 +24,6 @@
 #define PWM_FREQUENCY_HZ		(DISPLAY_DIGITS * DISPLAY_MAX_BRIGHTNESS * DISPLAY_FREQUENCY_HZ) // SysTick minimum frequency is 20kHz!!!
 
 // #define DISPLAY_PERIOD_S	(1 / DISPLAY_REFRESH_HZ)
-
-#define CAP(x, min, max)		(x < (min) ? (min) : (x > (max) ? (max) : x))
-#define FOR(_i, _n)				for (uint8_t i = _i; i < _n; i++)
 
 
 /*******************************************************************************
@@ -130,7 +128,7 @@ bool DisplayInit (void)
 	return _init;
 }
 
-void DisplayWrite			(const char* characters)		{ FOR(0, DISPLAY_DIGITS) _buffer[i] = __Char2Segments__(characters[i]); }
+void DisplayWrite			(char* characters)				{ FOR(0, DISPLAY_DIGITS) _buffer[i] = __Char2Segments__(characters[i]); }
 void DisplaySetDigit		(uint8_t digit, char character)	{ _buffer[digit] = __Char2Segments__(character); }
 void DisplayWriteNumber		(uint16_t number)				{ FOR(0, DISPLAY_DIGITS) _buffer[i] = (number / (pow(10, i))) % 10;}
 void DisplayClear			(void)							{ FOR(0, DISPLAY_DIGITS) _buffer[i] = __Char2Segments__(DISPLAY_CLEAR); }

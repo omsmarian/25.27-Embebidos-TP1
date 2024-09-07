@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     encoder.c
   @brief    Encoder driver
-  @author   Grupo 4
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
@@ -26,14 +26,11 @@
  ******************************************************************************/
 
 typedef struct{
-  bool RCHA;
-  bool RCHB;
-  bool RSWITCH;
-}state_flags_t;
+	bool RCHA;
+	bool RCHB;
+	bool RSWITCH;
+} state_flags_t;
 
-/*******************************************************************************
- * VARIABLES WITH GLOBAL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -43,14 +40,12 @@ typedef struct{
 * @brief Checks for encoder gesture
 */
 static void directionCallback(void);
+
 /**
  * @brief Checks for switch gesture
  */
 static void switchCallback(void);
 
-/*******************************************************************************
- * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -62,6 +57,7 @@ static bool falling_edge;
 static bool switch_falling_edge;
 static bool long_click_detected;
 static uint8_t press_duration;
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -81,11 +77,11 @@ bool encoder_Init(void)
   return 0;
 }
 
-
 action_t encoderRead(void)
 {
   return direction;
 }
+
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -123,7 +119,6 @@ static void directionCallback(void)
   }
 }
 
-
 static void switchCallback(void)
 {
   encoder_state.RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
@@ -154,4 +149,6 @@ static void switchCallback(void)
     }
   }
 }
+
+
 /******************************************************************************/

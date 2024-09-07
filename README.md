@@ -1,15 +1,21 @@
-## 22.99 - Laboratorio de Microprocesadores
+# 25.27 - Sistemas Embebidos
 
 # TRABAJO PRÁCTICO N° 1
 
-# INTERRUPCIONES
+## INTERRUPCIONES
 
 **Se desea implementar el control de acceso a un edificio de oficinas mediante
 una tarjeta magnética y un pin (clave de acceso). Para lograr el objetivo se
 dispone de encoder rotativo, un** **_display_** **de siete segmentos y un lector de
 tarjetas magnéticas.**
 
-**Requerimientos obligatorios**
+<p align="center">
+	<img src="image/README/board.png" alt="board" width="600"/>
+</p>
+
+---
+
+### **Requerimientos obligatorios**
 
 Para ingresar a una oficina el usuario debe ingresar su número de identificación (ID)
 y, en caso de tener acceso, debe ingresar su clave (PIN) para validar su identidad.
@@ -25,7 +31,7 @@ cambiar la intensidad del _display_ con el encoder.
 El ID debe ser visible en el _display_ mientras que los caracteres del PIN tienen que
 estar ocultos (por ejemplo, ser reemplazados por guiones).
 
-**Requerimientos deseados**
+### **Requerimientos deseados**
 
 El equipo debe ser robusto para evitar el acceso a personal no autorizado. Para esto
 se deben implementar medidas de seguridad, por ejemplo: volver a estado inicial tras
@@ -39,7 +45,7 @@ parpadeo y color del LED RGB de la FRDM-K64F).
 Se debe permitir, en modo administrador, agregar nuevos usuarios o eliminar
 usuarios existentes. A su vez, los usuarios deben poder modificar su clave.
 
-**Implementación**
+### **Implementación**
 
 El programa debe estar implementado utilizando una arquitectura que tenga bien
 definida la capa de aplicación y capa drivers, siendo el hardware transparente a la
@@ -54,7 +60,7 @@ Se debe agregar un pin de testeo (TP) que se encienda mientras se ejecutan las
 interrupciones, a fin de medir el tiempo que se emplea en la ISR y cuánto representa
 porcentualmente.
 
-**Conexionado**
+### **Conexionado**
 
 Cada equipo dispondrá de una placa Encoder-Display y un lector de banda magnética.
 
@@ -65,7 +71,7 @@ Estudiar la estructura de datos utilizada en las tarjetas magnéticas y el proto
 comunicación de datos a partir de la hoja de datos de Magtek y de la norma ISO IEC
 7811 - 2.
 
-**Evaluación**
+### **Evaluación**
 
 Para la nota del trabajo contemplará en orden los siguientes puntos:
 

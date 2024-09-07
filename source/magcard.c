@@ -8,11 +8,11 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <stdlib.h>
 #include "magcard.h"
 #include "board.h"
 #include "gpio.h"
 //#include "pisr.h"
+#include "macros.h"
 
 
 /*******************************************************************************
@@ -21,7 +21,7 @@
 
 #define DEVELOPMENT_MODE		1
 
-#define MAX_CHARS				(MAX_PAN_LENGTH + \
+#define MAX_CHARS				((SENTINEL_LENGTH * 3) + MAX_PAN_LENGTH + \
 								 EXPIRATION_LENGTH + SERVICE_CODE_LENGTH + \
 								 PVKI_LENGTH + PVV_LENGTH + CVV_LENGTH + UNUSED_SPACE + 4)
 #define DATA_LENGTH				(CHAR_LENGTH + PARITY_LENGTH)
@@ -30,12 +30,6 @@
 #define START_SENTINEL			0xB
 #define FIELD_SEPARATOR			0xD
 #define END_SENTINEL			0xF
-
-#define BITROLL_LEFT(x, b)		(x = ((x << 1) & 0xF) | (b & 1))
-#define BITROLL_RIGHT(x, b)		(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)))
-#define CAP(x, min, max)		(x = (x < (min) ? (min) : (x > (max) ? (max) : x)))
-#define CHAR2ASCII(c)			(c + 48)
-#define ASCII2CHAR(c)			(c - 48)
 
 
 /*******************************************************************************
@@ -73,6 +67,7 @@ static void				ReadClock		(void);
 static void				ReadBit			(void);
 static bool				CheckParity		(void);
 static void				ParseData		(void);
+
 static char				__Bits2Char__	(bool bits[]);
 //static uint8_t		__StoreBits__	(uint8_t track2_pos, char data[], uint8_t length);
 static uint8_t			__StoreChar__	(uint8_t track2_pos, char data[], uint8_t length);
@@ -83,16 +78,16 @@ static uint64_t			__CharsToNum__	(char chars[], uint8_t length);
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static bool				track2[MAX_TRACK_SIZE + 1]	= { 0 };
-static uint8_t			track2_length				= 0;
-static uint8_t			index						= 0;
-//static bool			data[40][4]					= { { 0 } }; // Another way to store data, easier to access and check
+static bool				track2[MAX_TRACK_SIZE + 1];
+static uint8_t			track2_length;
+static uint8_t			index;
+//static bool			data[40][4]; // Another way to store data, easier to access and check
 
 static MagCard_t		magCard;
-static MagCardState_t	state						= OFF;
-//static MagCardEvent_t	event						= NONE;
+// static MagCard_t		magCardCopy; // Prevents data corruption from user
+static MagCardState_t	state;
 
-static bool				ready						= false;
+static bool				ready;
 
 /*******************************************************************************
  *******************************************************************************
@@ -100,19 +95,21 @@ static bool				ready						= false;
  *******************************************************************************
  ******************************************************************************/
 
-bool							MagCardInit					(void) { return !FSM(INIT); } // OFF: 0
+// Primary Driver Services /////////////////////////////////////////////////////
+
 //bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == DATA_READY; }
+bool							MagCardInit					(void) { return !FSM(INIT); } // OFF: 0
 bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == IDLE && ready; }
 uint64_t						MagCardGetCardNumber		(void) { return __CharsToNum__(magCard.data.PAN, magCard.data.PAN_length); }
 
-// Complete Data Access
+// Complete Data Access ////////////////////////////////////////////////////////
 
 MagCard_t *						MagCardGetData				(void) { return &magCard; }
 MagCardData_t *					MagCardGetPANData			(void) { return &magCard.data; }
 MagCardAdditionalData_t *		MagCardGetAdditionalData	(void) { return &magCard.additional_data; }
 MagCardDiscretionaryData_t *	MagCardGetDiscretionaryData	(void) { return &magCard.discretionary_data; }
 
-// Direct Field Access
+// Direct Field Access /////////////////////////////////////////////////////////
 
 char *							MagCardGetPAN				(void) { return magCard.data.PAN; }
 uint8_t							MagCardGetPANLength			(void) { return magCard.data.PAN_length; }
@@ -122,6 +119,7 @@ char *							MagCardGetPVKI				(void) { return magCard.discretionary_data.PVKI; 
 char *							MagCardGetPVV				(void) { return magCard.discretionary_data.PVV; }
 char *							MagCardGetCVV				(void) { return magCard.discretionary_data.CVV; }
 char							MagCardGetLRC				(void) { return magCard.LRC; }
+// bool							MagCardIsValid				(void) { return magCard.valid; }
 
 
 /*******************************************************************************
@@ -196,8 +194,9 @@ static MagCardState_t FSM (MagCardEvent_t event)
 					if (CheckParity())
 					{
 						ParseData();
-//						state = DATA_READY;
+						// state = DATA_READY;
 						ready = true;
+						// magCardCopy = magCard;
 						state = IDLE;
 					}
 					else
@@ -228,7 +227,7 @@ static bool Init (void)
 	gpioMode(PIN_MAGCARD_CLOCK, INPUT);
 	gpioMode(PIN_MAGCARD_DATA, INPUT);
 
-	status = !gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable); // Periodic?
+	status = !gpioIRQ(PIN_MAGCARD_ENABLE, GPIO_IRQ_MODE_BOTH_EDGES, ReadEnable);
 	if (status)
 		status = !gpioIRQ(PIN_MAGCARD_CLOCK, GPIO_IRQ_MODE_FALLING_EDGE, ReadClock);
 
@@ -292,16 +291,16 @@ static void ParseData (void)
 {
 	uint8_t i = DATA_LENGTH; // Skip SS
 
-	i = __StoreChar__(i, magCard.data.PAN, magCard.data.PAN_length) + DATA_LENGTH; // Skip FS
-	i = __StoreChar__(i, magCard.additional_data.expiration, EXPIRATION_LENGTH);
-	i = __StoreChar__(i, magCard.additional_data.service_code, SERVICE_CODE_LENGTH);
-	i = __StoreChar__(i, magCard.discretionary_data.PVKI, PVKI_LENGTH);
-	i = __StoreChar__(i, magCard.discretionary_data.PVV, PVV_LENGTH);
-	i = __StoreChar__(i, magCard.discretionary_data.CVV, CVV_LENGTH) + DATA_LENGTH; // Skip ES
-	i = __StoreChar__(i, &magCard.LRC, 1);
+	i = __StoreChar__(i, magCard.data.PAN,						magCard.data.PAN_length) + DATA_LENGTH; // Skip FS
+	i = __StoreChar__(i, magCard.additional_data.expiration,	EXPIRATION_LENGTH);
+	i = __StoreChar__(i, magCard.additional_data.service_code,	SERVICE_CODE_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.PVKI,		PVKI_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.PVV,		PVV_LENGTH);
+	i = __StoreChar__(i, magCard.discretionary_data.CVV,		CVV_LENGTH) + DATA_LENGTH; // Skip ES
+	i = __StoreChar__(i, &magCard.LRC,							LRC_LENGTH);
 }
 
-// Helper Functions //////////////////////////////////////////////////////////// // Could be MACROs?
+// Helper Functions ////////////////////////////////////////////////////////////
 
 static char __Bits2Char__ (bool bits[])
 {
@@ -337,6 +336,9 @@ static uint64_t __CharsToNum__ (char chars[], uint8_t length)
 	return buffer;
 }
 
+
+/******************************************************************************/
+
 // Notes ///////////////////////////////////////////////////////////////////////
 
 // Reset function?
@@ -350,3 +352,6 @@ static uint64_t __CharsToNum__ (char chars[], uint8_t length)
 // Return data if it was read or only if it was valid?
 // Should it wait for data to be accessed or continue reading?
 // DATA_READY state needed?
+// Allow user to access data directly? Send copy?
+// MagCard structures in header file?
+// Process data only if it is requested?
