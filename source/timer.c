@@ -9,14 +9,14 @@
  ******************************************************************************/
 
 #include "timer.h"
-#include "SysTick.h"
+#include "pisr.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#if TIMER_TICK_MS != (1000U/SYSTICK_ISR_FREQUENCY_HZ)
+#if TIMER_TICK_MS != (1000U/PISR_FREQUENCY_HZ)
 #error Las frecuencias no coinciden!!
 #endif // TIMER_TICK_MS != (1000U/SYSTICK_ISR_FREQUENCY_HZ)
 
@@ -70,7 +70,7 @@ void timerInit(void)
     if (yaInit)
         return;
     
-    SysTick_Init(timer_isr); // init peripheral
+//    pisrRegister(timer_isr, ); // init peripheral
     
     yaInit = true;
 }

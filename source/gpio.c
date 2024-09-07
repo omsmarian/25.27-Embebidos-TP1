@@ -8,6 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdlib.h>
 #include "gpio.h"
 #include "hardware.h"
 #include "MK64F12.h"

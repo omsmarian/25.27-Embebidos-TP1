@@ -47,7 +47,7 @@ static uint32_t count;
 
 bool pisrRegister (pisr_callback_t fun, unsigned int period)
 {
-	if(!init_flag) // initialize the systick
+	if(!init_flag) // Initialize SysTick
 	{
 		SysTick->CTRL = 0x00;
 		SysTick->LOAD = SYSTICK_LOAD_INIT;
@@ -56,12 +56,14 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 		init_flag = true;
 	}
 	
-	if(count < PISR_CANT) // load the funtion and its period
+	if(count < PISR_CANT) // Load the function and its period
 	{
 		funArr[count].funadrrs = fun;
 		funArr[count].time = period;
 		funArr[count++].counter = period;
 	}
+
+	return 0;
 }
 
 

@@ -8,6 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <math.h>
 #include "display.h"
 #include "board.h"
 #include "gpio.h"
@@ -130,9 +131,11 @@ bool DisplayInit (void)
 
 void DisplayWrite			(char* characters)				{ FOR(0, DISPLAY_DIGITS) _buffer[i] = __Char2Segments__(characters[i]); }
 void DisplaySetDigit		(uint8_t digit, char character)	{ _buffer[digit] = __Char2Segments__(character); }
-void DisplayWriteNumber		(uint16_t number)				{ FOR(0, DISPLAY_DIGITS) _buffer[i] = (number / (pow(10, i))) % 10;}
+void DisplayWriteNumber		(uint16_t number)				{ FOR(0, DISPLAY_DIGITS) _buffer[i] = (number / ((int) pow(10, i))) % 10;}
 void DisplayClear			(void)							{ FOR(0, DISPLAY_DIGITS) _buffer[i] = __Char2Segments__(DISPLAY_CLEAR); }
 void DisplaySetBrightness	(uint8_t brightness)			{ _brightness = CAP(brightness, DISPLAY_MIN_BRIGHTNESS, DISPLAY_MAX_BRIGHTNESS); }
+
+
 
 
 /*******************************************************************************
@@ -153,9 +156,13 @@ static void RefreshDisplay (void)
 	FOR(0, DISPLAY_SEGMENTS)	gpioWrite(_segments[i], character & (1 << i)); // Select segments (Write character)
 
 	if ((_count % DISPLAY_MAX_BRIGHTNESS) == 0) // Next digit (Every 4 cycles * 100 steps)
-		_index = ++_index % DISPLAY_DIGITS;
+	{
+		_index++;
+		_index %= DISPLAY_DIGITS;
+	}
 
-	_count = ++_count % DISPLAY_MAX_BRIGHTNESS * 4;
+	_count++;
+	_count %= DISPLAY_MAX_BRIGHTNESS * 4;
 }
 
 // Helper functions ////////////////////////////////////////////////////////////

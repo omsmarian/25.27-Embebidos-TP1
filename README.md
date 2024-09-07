@@ -1,8 +1,8 @@
-# 25.27 - Sistemas Embebidos
+## 25.27 - Sistemas Embebidos
 
-# TRABAJO PRÁCTICO N° 1
+## TRABAJO PRÁCTICO N° 1
 
-## INTERRUPCIONES
+# INTERRUPCIONES
 
 **Se desea implementar el control de acceso a un edificio de oficinas mediante
 una tarjeta magnética y un pin (clave de acceso). Para lograr el objetivo se
