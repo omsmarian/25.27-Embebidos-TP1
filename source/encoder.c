@@ -11,8 +11,6 @@
 #include "encoder.h"
 #include "board.h"
 #include "pisr.h"
-#include <stdbool.h>
-#include "fsl_debug_console.h"
 
 
 /*******************************************************************************
@@ -20,7 +18,9 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE    1
-#define LONG_CLICK_THRESHOLD 15
+#define SPIN_FREQ 1000U
+#define CLICK_FREQ 20U
+#define LONG_CLICK_THRESHOLD 10
 
 
 /*******************************************************************************
@@ -65,10 +65,6 @@ static bool switch_falling_edge;
 static bool long_click_detected;
 static uint8_t press_duration;
 
-
-static bool flag = 0;
-static action_t action = NONE;
-
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -81,25 +77,22 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-  pisrRegister(directionCallback, 50);   // 1 ms
-  pisrRegister(switchCallback, 100);    // 100 ms
+  pisrRegister(directionCallback, PISR_FREQUENCY_HZ/SPIN_FREQ);   // 1 ms 
+  pisrRegister(switchCallback, PISR_FREQUENCY_HZ/CLICK_FREQ);    // 50 ms
+  direction = NONE;
 
-  return 0;
+  return 1;
 }
 
 
 action_t encoderRead(void)
 {
-  PRINTF("%d\n", action);
-  if(flag == 1)
-  {
-	  flag = 0;
-	  return action;
-  }
-  else
-  {
-	  return NONE;
-  }
+  return direction;
+}
+
+void ResetEncoder(void)
+{
+  direction = NONE;
 }
 /*******************************************************************************
  *******************************************************************************
@@ -107,30 +100,28 @@ action_t encoderRead(void)
  *******************************************************************************
  ******************************************************************************/
 
-/**********************************************
-* La joda de este padazo de codigo es q cada
-* vez q se llama guarda el estado de los pines
-**********************************************/
 static void directionCallback(void)
 {
   encoder_state.RCHA = gpioRead(PIN_ENCODER_RCHA);
   encoder_state.RCHB = gpioRead(PIN_ENCODER_RCHB);
 
-  if (!falling_edge && flag == false)
+  if (!falling_edge)
   {
-	flag = true;
     if (encoder_state.RCHA)
     {
-      direction = encoder_state.RCHB ? NONE : LEFT;
-      falling_edge = !encoder_state.RCHB;
-      action = LEFT;
-
+      if(!encoder_state.RCHB)
+      {
+        direction = LEFT;
+        falling_edge = true;
+      }
     }
     else
     {
-      direction = encoder_state.RCHB ? RIGHT : NONE;
-      falling_edge = encoder_state.RCHB;
-      action = RIGHT;
+      if(encoder_state.RCHB)
+      {
+        direction = RIGHT;
+        falling_edge = true;
+      }
     }
   }
   else
@@ -143,6 +134,15 @@ static void directionCallback(void)
 }
 
 
+
+#define DOUBLE_CLICK_THRESHOLD 15 // Define el umbral para el doble clic
+#define MIN_TIME_BETWEEN_CLICKS 5 // Define el tiempo mínimo entre clics para un doble clic
+
+static uint8_t click_count = 0; // Contador de clics
+static uint8_t click_timer = 0; // Temporizador de clics
+static uint8_t time_since_last_click = 0; // Tiempo desde el último clic
+static bool click_detected = false; // Variable para detectar si se ha registrado un clic
+
 static void switchCallback(void)
 {
   encoder_state.RSWITCH = gpioRead(PIN_ENCODER_RSWITCH);
@@ -152,6 +152,12 @@ static void switchCallback(void)
     {
       switch_falling_edge = true;
       press_duration = 0;
+      click_count++;
+      if (click_count == 1)
+      {
+          click_timer = DOUBLE_CLICK_THRESHOLD;
+          click_detected = true; // Se detectó un clic
+      }
     }
   }
   else
@@ -160,17 +166,41 @@ static void switchCallback(void)
     if(encoder_state.RSWITCH)
     {
       switch_falling_edge = false;
-      if (press_duration >= LONG_CLICK_THRESHOLD)
+      if (press_duration >= LONG_CLICK_THRESHOLD && !click_detected) // Verificar si no se ha detectado un clic
       {
           direction = LONG_CLICK;
           long_click_detected = true;
+          click_count = 0;
       }
       else if (!long_click_detected)
       {
-          direction = CLICK;
+          if (click_count >= 2)
+          {
+              direction = DOUBLE_CLICK;
+              click_count = 0;
+          }
       }
       long_click_detected = false;
+      click_detected = false; // Reiniciar la detección de clics
     }
   }
+  if (click_timer > 0)
+  {
+      click_timer--;
+      if (click_timer == 0)
+      {
+          if (click_count == 1)
+          {
+        	  if(!encoder_state.RSWITCH)
+        		  direction = LONG_CLICK;
+        	  else
+        		  direction = CLICK;
+          }
+          click_count = 0;
+      }
+  }
 }
+
+//   Decrementa el temporizador de clics y registra un solo clic si el temporizador llega a 0
+
 /******************************************************************************/

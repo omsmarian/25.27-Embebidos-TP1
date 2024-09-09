@@ -40,19 +40,27 @@
 #define HIGH    			1
 #endif // LOW
 
+// Manual Write
+#define SETB_ADDRS			(0x400FF044u)
+#define SETB_PTR			((uint32_t *)SETB_ADDRS)
+#define SETB_VAL			(1<<9)
+
+#define CLRB_ADDRS			(0x400FF048u)
+#define CLRB_PTR			((uint32_t *)CLRB_ADDRS)
+#define CLRB_VAL			(1<<9)
+#define DEBUG_TP_SET		*(SETB_PTR) = SETB_VAL
+#define DEBUG_TP_CLR		*(CLRB_PTR) = CLRB_VAL
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 typedef uint8_t pin_t;
-
 typedef bool bit_t;
-
 typedef uint8_t byte_t;
 
-typedef struct
-{
+typedef struct {
 	uint8_t port    : 3;
 	uint8_t num		: 5;
 } PINData_t;
@@ -70,8 +78,7 @@ enum {
     GPIO_IRQ_CANT_MODES
 };
 
-typedef enum
-{
+typedef enum {
 	PORT_mAnalog,
 	PORT_mGPIO,
 	PORT_mAlt2,
@@ -79,11 +86,10 @@ typedef enum
 	PORT_mAlt4,
 	PORT_mAlt5,
 	PORT_mAlt6,
-	PORT_mAlt7,
+	PORT_mAlt7
 } PORTMux_t;
 
-typedef enum
-{
+typedef enum {
 	PORT_eDisabled				= 0x00,
 	PORT_eDMARising				= 0x01,
 	PORT_eDMAFalling			= 0x02,
@@ -92,7 +98,7 @@ typedef enum
 	PORT_eInterruptRising		= 0x09,
 	PORT_eInterruptFalling		= 0x0A,
 	PORT_eInterruptEither		= 0x0B,
-	PORT_eInterruptAsserted		= 0x0C,
+	PORT_eInterruptAsserted		= 0x0C
 } PORTEvent_t;
 
 typedef void (*pinIrqFun_t)(void);
@@ -121,7 +127,7 @@ bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun);
 /**
  * @brief Write a HIGH or a LOW value to a digital pin
  * @param pin the pin to write (according PORTNUM2PIN)
- * @param val Desired value (HIGH or LOW)
+ * @param value Desired value (HIGH or LOW)
  */
 void gpioWrite (pin_t pin, bool value);
 

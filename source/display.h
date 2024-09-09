@@ -19,12 +19,16 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DISPLAY_LENGTH			4
+#define DISPLAY_DIGITS			4
+#define DISPLAY_SEGMENTS		8
 
-#define DISPLAY_FREQUENCY_HZ	50
+#define DISPLAY_FREQUENCY_HZ	75
+#define DISPLAY_ROLL_DELAY_MS	1000
 
-#define MIN_BRIGHTNESS			0
-#define MAX_BRIGHTNESS			100
+#define DISPLAY_MIN_BRIGHTNESS	0
+#define DISPLAY_MAX_BRIGHTNESS	25
+
+#define MAX_STRING_LENGTH		16
 
 
 /*******************************************************************************
@@ -32,32 +36,70 @@
  ******************************************************************************/
 
 /**
- * @brief
- * @param
- * @return
+ * @brief Initialize the display
+ * @return Initialization status (true if successful)
+ * @note This function must be called before any other display function
+ * @example if (DisplayInit()) { // Initialization successful }
  */
 bool DisplayInit (void);
 
 /**
- * @brief
- * @param
- * @return
+ * @brief Set a specific digit in the display with a character
+ * @param digit Digit to set
+ * @param character Character to write
+ * @note Use CLEAR or ' ' to clear the digit
+ * @example DisplaySetDigit(0, 'A'); // Write 'A' to the first digit
  */
-void DisplayWrite (char characters[]);
+void DisplaySetDigitChar (uint8_t digit, char character);
 
 /**
- * @brief
- * @param
- * @return
+ * @brief Set a specific digit in the display with a number
+ * @param digit Digit to set
+ * @param character Number to write
+ * @note Use CLEAR or ' ' to clear the digit.
+ *       If the digit is grater than DISPLAY_DIGITS or the number is greater than 9, the digit will not be changed
+ * @example DisplaySetDigitNum(0, 1); // Write '1' to the first digit
+ */
+void DisplaySetDigitNum (uint8_t digit, uint8_t number);
+
+/**
+ * @brief Write characters to the display
+ * @param characters Characters to write (String)
+ * @param length Number of characters to write
+ * @note If length is greater than DISPLAY_DIGITS, only the first DISPLAY_DIGITS characters will be written
+ * @example DisplayWrite("ABCDE"); // Write 'ABCD' to the display
+ */
+void DisplayWriteChar (char * characters);
+
+/**
+ * @brief Write a number to the display
+ * @param number Number to write
+ * @note If the number has more than DISPLAY_DIGITS digits, only the fisrt DISPLAY_DIGITS digits will be written
+ * @example DisplayWriteNumber(1234); // Write '1234' to the display
+ */
+void DisplayWriteNum (uint8_t n1, uint8_t n2, uint8_t n3, uint8_t n4);
+
+/**
+ * @brief Write a string to the display
+ * @param string String to write
+ * @param start Start position to write the string (first digit is 0)
+ * @note If start is greater than DISPLAY_DIGITS, only the last DISPLAY_DIGITS characters will be written
+ * @example DisplayWriteString("ABCDE", 3); // Write 'BCDE' to the display
+ */
+void DisplayWriteString (char * string, uint8_t start);
+
+/**
+ * @brief Clear the display
+ * @example DisplayClear(); // Clear the display
  */
 void DisplayClear (void);
 
 /**
- * @brief
- * @param
- * @return
+ * @brief Set the brightness of the display
+ * @param brightness Brightness level (0-100)
+ * @example DisplaySetBrightness(50); // Set the brightness to 50%
  */
-void DisplaySetBrightness (uint8_t brightness);
+int8_t DisplaySetBrightness (int8_t brightness);
 
 
 /*******************************************************************************

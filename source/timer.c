@@ -1,54 +1,39 @@
 /***************************************************************************//**
-  @file     +Nombre del archivo (ej: template.c)+
-  @brief    +Descripcion del archivo+
-  @author   +Nombre del autor (ej: Salvador Allende)+
+  @file     timer.c
+  @brief    Timer driver. Simple implementation, support multiple timers
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-// +Incluir el header propio (ej: #include "template.h")+
+#include "timer.h"
+#include "pisr.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-
-
-/*******************************************************************************
- * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
- ******************************************************************************/
-
-
-
-/*******************************************************************************
- * VARIABLES WITH GLOBAL SCOPE
- ******************************************************************************/
-
-// +ej: unsigned int anio_actual;+
+#define TIMER_FREQUENCY_HZ		(1000 / TIMER_TICK_MS)
 
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static void falta_envido (int);+
-
-
-/*******************************************************************************
- * ROM CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-// +ej: static const int temperaturas_medias[4] = {23, 26, 24, 29};+
+/**
+ * @brief Periodic service
+ */
+static void timer_isr(void);
 
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-// +ej: static int temperaturas_actuales[4];+
+static volatile ticks_t timer_main_counter;
 
 
 /*******************************************************************************
@@ -57,6 +42,55 @@
  *******************************************************************************
  ******************************************************************************/
 
+void timerInit(void)
+{
+    static bool yaInit = false;
+    if (yaInit)
+        return;
+    
+    pisrRegister(timer_isr, PISR_FREQUENCY_HZ / TIMER_FREQUENCY_HZ); // init peripheral
+    
+    yaInit = true;
+}
+
+ticks_t timerStart(ticks_t ticks)
+{
+    ticks_t now_copy;
+    
+    if (ticks < 0)
+        ticks = 0; // truncate min wait time
+    
+    //disable_interrupts();
+    now_copy = timer_main_counter; // esta copia debe ser atomic!!
+    //enable_interrupts();
+
+    now_copy += ticks;
+
+    return now_copy;
+}
+
+bool timerExpired(ticks_t timeout)
+{
+    ticks_t now_copy;
+
+    //disable_interrupts();
+    now_copy = timer_main_counter; // esta copia debe ser atomic!!
+    //enable_interrupts();
+
+    now_copy -= timeout;
+    return (now_copy >= 0);
+}
+
+void timerDelay(ticks_t ticks)
+{
+    ticks_t tim;
+    
+    tim = timerStart(ticks);
+    while (!timerExpired(tim))
+    {
+        // wait...
+    }
+}
 
 
 /*******************************************************************************
@@ -65,6 +99,10 @@
  *******************************************************************************
  ******************************************************************************/
 
+static void timer_isr(void)
+{
+    ++timer_main_counter; // update main counter
+}
 
 
- 
+/******************************************************************************/

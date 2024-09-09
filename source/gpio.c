@@ -8,54 +8,26 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <stdio.h>
+#include <stdlib.h>
 #include "gpio.h"
-#include "board.h"
 #include "hardware.h"
 #include "MK64F12.h"
+#include "board.h"
+#include "macros.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define BITGET(x,n) 		((x) & (1<<(n)))
-#define BITSET(x,n) 		((x) |= (1<<(n)))
-#define BITCLR(x,n) 		((x) &= ~(1<<(n)))
-#define BITTOG(x,n) 		((x) ^= (1<<(n)))
-#define BITINV(x,n) 		((x) = (x) ^ (1<<(n)))
-#define BITVAL(x,n) 		((x) >> (n) & 1)
-#define BITMSK(x,n) 		((x) & ~(1<<(n)))
-#define BITSETVAL(x,n,v)	((x) = (x) ^ ((-(v) ^ (x)) & (1 << (n))))
-#define BITCLVAL(x,n,v) 	((x) = (x) & ~(1 << (n)) | ((v) << (n)))
-#define BITTOGVAL(x,n,v) 	((x) = (x) ^ ((v) << (n)))
-#define BITINVVAL(x,n,v) 	((x) = (x) ^ ((v) << (n)))
-#define BITMSKVAL(x,n,v) 	((x) = (x) & ~(1 << (n)))
-#define BITRNG(x,m,n) 		((x) & (((1 << ((m) - (n) + 1)) - 1) << (n)))
-#define BITRNGVAL(x,m,n,v) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((v) << (n))))
-#define BITCPY(x,m,n,y) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((y) & ((1 << ((m) - (n) + 1) - 1)) << (n))))
-#define BITCPYVAL(x,m,n,y) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((y) << (n))))
-#define BITINS(x,m,n,y) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((y) << (n))))
-#define BITEXT(x,m,n) 		((x) >> (n) & ((1 << ((m) - (n) + 1)) - 1))
-#define BITEXTVAL(x,m,n,v) 	((x) = (x) & ~(((1 << ((m) - (n) + 1) - 1) << (n)) | ((v) << (n))))
-#define BITCNT(x) 			((x) & 1 + BITCNT((x) >> 1))
-#define BITREV(x) 			((x) = (((x) & 0x55555555) << 1) | (((x) & 0xAAAAAAAA) >> 1))
-#define BITSWP2(x) 			((x) = ((x) & 0x33333333) << 2 | ((x) & 0xCCCCCCCC) >> 2)
-#define BITSWP4(x) 			((x) = ((x) & 0x0F0F0F0F) << 4 | ((x) & 0xF0F0F0F0) >> 4)
-#define BITSWP8(x) 			((x) = ((x) & 0x00FF00FF) << 8 | ((x) & 0xFF00FF00) >> 8)
-#define BITSWP16(x) 		((x) = ((x) & 0x0000FFFF) << 16 | ((x) & 0xFFFF0000) >> 16)
-#define BITPAR(x) 			((x) = ((x) & 0x55555555) + (((x) >> 1) & 0x55555555), \
-		   					 (x) = ((x) & 0x33333333) + (((x) >> 2) & 0x33333333), \
-							 (x) = ((x) & 0x0F0F0F0F) + (((x) >> 4) & 0x0F0F0F0F), \
-							 (x) = ((x) & 0x00FF00FF) + (((x) >> 8) & 0x00FF00FF), \
-							 (x) = ((x) & 0x0000FFFF) + (((x) >> 16) & 0x0000FFFF))
+#define FUN_CANT	32 // Only 1 per PIN
 
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-pinIrqFun_t irqFuns[32] = { NULL };
+pinIrqFun_t irqFuns[FUN_CANT] = { NULL };
 
 
 /*******************************************************************************
@@ -101,10 +73,10 @@ void gpioMode (pin_t pin, uint8_t mode)
 	*pin_PCR |= PORT_PCR_MUX(PORT_mGPIO);
 
 	if (mode == OUTPUT)
-		*pin_PDDR |= (HIGH<<(pin_data.num));
+		*pin_PDDR |= (HIGH << (pin_data.num));
 	else
 	{
-		*pin_PDDR |= (LOW<<(pin_data.num));
+		*pin_PDDR |= (LOW << (pin_data.num));
 
 		if (mode != INPUT)
 		{
@@ -122,11 +94,17 @@ void gpioMode (pin_t pin, uint8_t mode)
 
 bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun)
 {
+	bool status = true;
+
 	NVIC_EnableIRQ(PORT_IRQn[PIN2PORT(pin)]);
 	PORT_Ports[PIN2PORT(pin)]->PCR[PIN2NUM(pin)] |= PORT_PCR_IRQC(GPIO_IRQn[irqMode]);
-	irqFuns[PIN2NUM(pin)] = irqFun;
+	if (PIN2NUM(pin) < FUN_CANT && irqFun != NULL)
+	{
+		irqFuns[PIN2NUM(pin)] = irqFun;
+		status = false;
+	}
 
-	return 0;
+	return status; // 0 = success
 }
 
 void gpioWrite (pin_t pin, bool value)
@@ -153,53 +131,67 @@ bool gpioRead (pin_t pin)
 
 __ISR__ PORTA_IRQHandler (void)
 {
-	// uint8_t pin = PinBit2Num(PORTA->ISFR);
+	DEBUG_TP_SET;
 	for (uint8_t i = 0; i < 32; i++)
-	{
 		if (BITGET(PORTA->ISFR, i))
 		{
 			PORTA->PCR[i] |= PORT_PCR_ISF(HIGH);
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	}
-	// PORTA->PCR[pin] |= PORT_PCR_ISF(HIGH);
-	// PinBit2Num(PORTA->ISFR);
-	// PinBit2Num(NVIC_GetActive(PORTA));
-	// if(irqFuns[pin] != NULL)
-		// irqFuns[pin]();
+	DEBUG_TP_SET;
 }
 
 __ISR__ PORTB_IRQHandler (void)
 {
-	uint8_t pin = PinBit2Num(PORTB->ISFR);
-	PORTB->PCR[pin] |= PORT_PCR_ISF(HIGH);
-	if(irqFuns[pin] != NULL)
-		irqFuns[pin]();
+	DEBUG_TP_SET;
+	for (uint8_t i = 0; i < 32; i++)
+		if (BITGET(PORTB->ISFR, i))
+		{
+			PORTB->PCR[i] |= PORT_PCR_ISF(HIGH);
+			if(irqFuns[i] != NULL)
+				irqFuns[i]();
+		}
+	DEBUG_TP_SET;
 }
 
 __ISR__ PORTC_IRQHandler (void)
 {
-	uint8_t pin = PinBit2Num(PORTC->ISFR);
-	PORTC->PCR[pin] |= PORT_PCR_ISF(HIGH);
-	if(irqFuns[pin] != NULL)
-		irqFuns[pin]();
+	DEBUG_TP_SET;
+	for (uint8_t i = 0; i < 32; i++)
+		if (BITGET(PORTC->ISFR, i))
+		{
+			PORTC->PCR[i] |= PORT_PCR_ISF(HIGH);
+			if(irqFuns[i] != NULL)
+				irqFuns[i]();
+		}
+	DEBUG_TP_SET;
 }
 
 __ISR__ PORTD_IRQHandler (void)
 {
-	uint8_t pin = PinBit2Num(PORTD->ISFR);
-	PORTD->PCR[pin] |= PORT_PCR_ISF(HIGH);
-	if(irqFuns[pin] != NULL)
-		irqFuns[pin]();
+	DEBUG_TP_SET;
+	for (uint8_t i = 0; i < 32; i++)
+		if (BITGET(PORTD->ISFR, i))
+		{
+			PORTD->PCR[i] |= PORT_PCR_ISF(HIGH);
+			if(irqFuns[i] != NULL)
+				irqFuns[i]();
+		}
+	DEBUG_TP_SET;
 }
 
 __ISR__ PORTE_IRQHandler (void)
 {
-	uint8_t pin = PinBit2Num(PORTE->ISFR);
-	PORTE->PCR[pin] |= PORT_PCR_ISF(HIGH);
-	if(irqFuns[pin] != NULL)
-		irqFuns[pin]();
+	DEBUG_TP_SET;
+	for (uint8_t i = 0; i < 32; i++)
+		if (BITGET(PORTE->ISFR, i))
+		{
+			PORTE->PCR[i] |= PORT_PCR_ISF(HIGH);
+			if(irqFuns[i] != NULL)
+				irqFuns[i]();
+		}
+	DEBUG_TP_SET;
 }
 
 
@@ -217,3 +209,6 @@ uint8_t PinBit2Num(uint32_t pin)
 
 	return i;
 }
+
+
+/******************************************************************************/

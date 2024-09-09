@@ -12,9 +12,23 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "fsl_debug_console.h"
-#include "encoder.h"
 
 #include "users.h"
+
+#include "encoder.h"
+#include "display.h"
+#include "macros.h"
+#include "magcard.h"
+#include "LEDs.h"
+#include "timer.h"
+
+
+static bool access_flag = false;
+static bool error_flag = false;
+
+static ticks_t timer_access;
+static ticks_t timer_error;
+
 
 
 
@@ -25,9 +39,11 @@ void update_menu();
 void clear_terminal();
 void init_fsl();
 
+bool read_from_encoder(char *id);
+
 void access_system_call(void);
 
-enum states_fsl {ADD_USER, DELETE_USER, CHANGE_PASSWORD, ACCESS_SYSTEM};
+enum states_fsl {ADD_USER, DELETE_USER, CHANGE_PASSWORD, ACCESS_SYSTEM, BRIGHTNESS};
 
 
 

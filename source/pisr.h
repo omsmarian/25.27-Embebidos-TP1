@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     pisr.h
   @brief    Periodic Interrupt (PISR) driver
-  @author   Nicolás Magliola
+  @author   Group 4
  ******************************************************************************/
 
 #ifndef _PISR_H_
@@ -19,9 +19,8 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PISR_FREQUENCY_HZ 1000U
-
-#define PISR_CANT        8
+#define PISR_FREQUENCY_HZ	10000U
+#define PISR_CANT			8
 
 
 /*******************************************************************************
@@ -30,10 +29,6 @@
 
 typedef void (*pisr_callback_t) (void);
 
-
-/*******************************************************************************
- * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
- ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
