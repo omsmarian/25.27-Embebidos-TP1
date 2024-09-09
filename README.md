@@ -1,13 +1,10 @@
-## 25.27 - Sistemas Embebidos
+## 25.27 - Sistemas Embebidos TRABAJO PRÁCTICO N° 1
 
-## TRABAJO PRÁCTICO N° 1
+## MANUAL DE USUARIO 
 
-# INTERRUPCIONES
+# SISTEMA DE USUARIOS 
 
-**Se desea implementar el control de acceso a un edificio de oficinas mediante
-una tarjeta magnética y un pin (clave de acceso). Para lograr el objetivo se
-dispone de encoder rotativo, un** **_display_** **de siete segmentos y un lector de
-tarjetas magnéticas.**
+**El sistema emplea un display en el cual se presentan los datos ingresados o los cuales se están configurando, un encoder con botón para ingresar al menú y los datos necesarios; y un set de Leds los cuales emulan el pestillo de ingreso o una alarma de error.**
 
 <p align="center">
 	<img src="image/README/board.png" alt="board" width="600"/>
@@ -15,69 +12,26 @@ tarjetas magnéticas.**
 
 ---
 
-### **Requerimientos obligatorios**
+### **Menú de inicio**
 
-Para ingresar a una oficina el usuario debe ingresar su número de identificación (ID)
-y, en caso de tener acceso, debe ingresar su clave (PIN) para validar su identidad.
+La pestaña inicial presenta una serie de alternativas de uso las cuales se catalogan de la siguiente manera:
+	- Add User (ADD ): Esta opción permite agregar un usuario al sistema, para ello requiere ingresar un ID y una contraseña.
+ 	- Delete User (dELE): Esta opción permite eliminar un usuario al sistema, para ello requiere ingresar un ID y una contraseña, los cuales ambos deben ser válidos y pertenecer a un usuario existente.
+  	- Change Password (CHnG): Esta opción permite cambiar una contraseña de un usuario, para ello requiere ingresar un ID existente,  su contraseña actual válida y la nueva contraseña.
+   	- Access (ACCS): Brinda el acceso a un usuario existente en el sistema. Requiere que el ID exista y la contraseña sea la correspondiente.
+    	- Change Brightness (brIG): Permite cambiar el nivel de brillo del display de 0 a 25.
 
-El ID es un número de 8 dígitos que puede ingresarse usando el encoder o con la
-tarjeta magnética. El PIN es una clave entre 4 y 5 dígitos que solo se puede ingresar
-usando el encoder rotativo. Solo si el ID y PIN son correctos, se debe activar el
-pestillo eléctrico (emulado por un LED de la placa) durante 5 segundos.
+### **Uso del Encoder**
 
-El usuario debe poder corregir errores de escritura, cancelar el intento de acceso y
-cambiar la intensidad del _display_ con el encoder.
+Para ingresar los datos se utiliza un encoder, el cual permite girar a la izquiera, la derecha y pulsar. A continuación se comentan los usos posibles:
+	- Derecha/Izquiera: Esto permite cambiar la selección actual del menú o cambiar el dígito actual ingresado, ya sea para ID o contraseña.
+ 	- Pulsar 1 vez: Esto ingresa a la opción seleccionada. En caso de estar en el menú ingresa a lo que se desea y en caso de realizarse modificando un dígito, confirma la selección.
+  	- Pulsar 2 veces: Esto borra la última selección. Es utilizado para correrir errores de ingreso de datos. Requiere de realizarse en un lapso de tiempo o se considera un único click.
+   	- Mantener pulsado: Esta opción permite retornar al menú, cancelando el ingreso de datos actuales. En caso de realizarse en el menú de cambio de brillo, se setea el máximo valor posible.
 
-El ID debe ser visible en el _display_ mientras que los caracteres del PIN tienen que
-estar ocultos (por ejemplo, ser reemplazados por guiones).
+En todo caso de utilizar el botón/pulsador, se prende un LED de la placa del sistema.
 
-### **Requerimientos deseados**
+### **Uso de LEDs**
 
-El equipo debe ser robusto para evitar el acceso a personal no autorizado. Para esto
-se deben implementar medidas de seguridad, por ejemplo: volver a estado inicial tras
-inactividad, retardo luego de ingresar una clave incorrecta, bloqueo del acceso de ese
-ID tras 3 intentos consecutivos incorrectos, etc.
+Hay 3 LEDs en el dispositivo actual, en caso de que los tres estén prendidos en simultáneo, corresponde a la habilitación del pestillo. En caso en el que solo esté prendido el del medio, esto equivale a accionar una alerta de error de acceso.
 
-El uso del equipo debe sencillo e intuitivo. Se valorará una interfaz gráfica cómoda
-(animación del _display_ , indicación de tanto números como letras, velocidad de
-parpadeo y color del LED RGB de la FRDM-K64F).
-
-Se debe permitir, en modo administrador, agregar nuevos usuarios o eliminar
-usuarios existentes. A su vez, los usuarios deben poder modificar su clave.
-
-### **Implementación**
-
-El programa debe estar implementado utilizando una arquitectura que tenga bien
-definida la capa de aplicación y capa drivers, siendo el hardware transparente a la
-capa aplicación.
-
-Se debe hacer uso eficiente de las interrupciones de hardware y de la CPU. No se
-deben perder eventos de usuario y se debe evitar el uso de código bloqueante. Para
-la capa aplicación se recomienda implementar una FSM para manejo de los estados
-del equipo.
-
-Se debe agregar un pin de testeo (TP) que se encienda mientras se ejecutan las
-interrupciones, a fin de medir el tiempo que se emplea en la ISR y cuánto representa
-porcentualmente.
-
-### **Conexionado**
-
-Cada equipo dispondrá de una placa Encoder-Display y un lector de banda magnética.
-
-Se deberá analizar el circuito de conexionado a partir del esquemático. **Es muy
-importante considerar los niveles de tensión (5V y/o 3.3V), dirección y
-polaridad de las señales (entrada o salida, activo bajo o alto)**.
-Estudiar la estructura de datos utilizada en las tarjetas magnéticas y el protocolo de
-comunicación de datos a partir de la hoja de datos de Magtek y de la norma ISO IEC
-7811 - 2.
-
-### **Evaluación**
-
-Para la nota del trabajo contemplará en orden los siguientes puntos:
-
-1. Funcionamiento obligatorio: Cumplimiento de los requerimientos obligatorios.
-2. Implementación: Correcta arquitectura, diseño de drivers, uso correcto de la
-   CPU e interrupciones.
-3. Funcionamiento deseado: Robustez, uso intuitivo y versatilidad.
-4. Presentación: Explicación de la estructura del programa, manual de usuario
-   del equipo, claridad en la explicación, etc.
