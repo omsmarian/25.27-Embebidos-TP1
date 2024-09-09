@@ -43,6 +43,8 @@
  */
 static void RefreshDisplay (void);
 
+// Helper functions ////////////////////////////////////////////////////////////
+
 /**
  * @brief Convert a character to its corresponding segments
  * @param character Character to convert
@@ -171,6 +173,17 @@ void DisplayWriteNum (uint8_t n1, uint8_t n2, uint8_t n3, uint8_t n4)
 	if (n4 > NUMBERS) _buffer[3] = n4;
 }
 
+void DisplayWriteString (char * string, uint8_t start)
+{
+	DisplayClear();
+
+	uint8_t length = 0;
+	while (string[length++] != '\0')
+
+	CAP(start, 0, length - DISPLAY_DIGITS);
+	DisplayWriteChar(&string[start]);
+}
+
 void DisplayWritePassword(uint8_t position, uint8_t number)
 {
 	//DisplayClear();
@@ -195,17 +208,6 @@ int8_t DisplaySetBrightness (int8_t brightness)
 	return _brightness;
 }
 
-void DisplayWriteString (char * string, uint8_t start)
-{
-	DisplayClear();
-
-	uint8_t length = 0;
-	while (string[length++] != '\0')
-
-	CAP(start, 0, length - DISPLAY_DIGITS);
-	DisplayWriteChar(&string[start]);
-}
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -221,7 +223,7 @@ static void RefreshDisplay (void)
 	if (((_count + 1) % DISPLAY_MAX_BRIGHTNESS) >=  _brightness) // PWM
 		character = 0;
 
-	FOR(0, DISPLAY_SEGMENTS)	gpioWrite(_segments[i], character & (0 << i));
+	FOR(0, DISPLAY_SEGMENTS)	gpioWrite(_segments[i], character & (0 << i)); // Clear segments before selecting next digit
 	FOR(0, DISPLAY_DIGITS / 2)	gpioWrite(_digits[i], _index & (1 << i)); // Select digit (Encoded)
 	FOR(0, DISPLAY_SEGMENTS)	gpioWrite(_segments[i], character & (1 << i)); // Select segments (Write character)
 

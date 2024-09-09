@@ -45,6 +45,8 @@
  */
 static void RefreshDisplay (void);
 
+// Helper functions ////////////////////////////////////////////////////////////
+
 /**
  * @brief Convert a character to its corresponding segments
  * @param character Character to convert
@@ -114,8 +116,6 @@ const uint8_t _digits [] = { PIN_DISPLAY_SEL1,
 static uint8_t _buffer[DISPLAY_DIGITS];
 // static uint8_t _index = 0;
 static int8_t _brightness = DISPLAY_MAX_BRIGHTNESS;
-
-
 static uint16_t _counterSlide = 0;
 
 
@@ -176,6 +176,17 @@ void DisplayWriteNum (uint8_t n1, uint8_t n2, uint8_t n3, uint8_t n4)
 	if (n4 > NUMBERS) _buffer[3] = n4;
 }
 
+void DisplayWriteString (char * string, uint8_t start)
+{
+	DisplayClear();
+
+	uint8_t length = 0;
+	while (string[length++] != '\0')
+
+	CAP(start, 0, length - DISPLAY_DIGITS);
+	DisplayWriteChar(&string[start]);
+}
+
 void DisplayWritePassword(uint8_t position, uint8_t number)
 {
 	//DisplayClear();
@@ -200,17 +211,6 @@ int8_t DisplaySetBrightness (int8_t brightness)
 	return _brightness;
 }
 
-void DisplayWriteString (char * string, uint8_t start)
-{
-	DisplayClear();
-
-	uint8_t length = 0;
-	while (string[length++] != '\0')
-
-	CAP(start, 0, length - DISPLAY_DIGITS);
-	DisplayWriteChar(&string[start]);
-}
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -221,14 +221,15 @@ void DisplayWriteString (char * string, uint8_t start)
 static void RefreshDisplay (void)
 {
 	static uint8_t _index = 0, _count = 0;
-	if (!(++_counterSlide % 100))
-		{
-			_counterSlide = 0;
-			_index++;
-			if(_buffer[_index]=='\0')
-				_index = 0;
-		}
 	uint8_t character = _characters[_buffer[_index]];
+
+	if (!(++_counterSlide % 100))
+	{
+		_counterSlide = 0;
+		_index++;
+		if(_buffer[_index]=='\0')
+			_index = 0;
+	}
 
 	if (((_count + 1) % DISPLAY_MAX_BRIGHTNESS) >=  _brightness) // PWM
 		character = 0;

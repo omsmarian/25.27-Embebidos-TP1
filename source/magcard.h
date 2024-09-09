@@ -38,6 +38,8 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// MagCard Structures, could be private if complete access is not needed or wanted
+
 typedef struct {
 	char PAN[MAX_PAN_LENGTH];
 	uint8_t PAN_length;
@@ -59,13 +61,14 @@ typedef struct {
 	MagCardAdditionalData_t additional_data;
 	MagCardDiscretionaryData_t discretionary_data;
 	char LRC;
-	// bool valid; // Serves as a flag
 } MagCard_t;
 
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
+
+// Primary Driver Services /////////////////////////////////////////////////////
 
 /**
  * @brief Initialize the MagCard driver
@@ -91,7 +94,16 @@ bool MagCardGetStatus (void);
 uint64_t MagCardGetCardNumber (void);
 
 /**
- * @brief Complete Access to Primary Data
+ * @brief Clear the data buffer
+ * @note This function should be called after accessing the data
+ * @example MagCardClearData();
+ */
+void MagCardClearData (void); // This could be done automatically after reading the data
+
+// Complete Data Access ////////////////////////////////////////////////////////
+
+/**
+ * @brief Complete Access to Primary Data, could be private if not needed or wanted
  * @return Pointer to the corresponding MagCard structure
  * @example MagCard_t * card = MagCardGetData();
  */
@@ -99,6 +111,8 @@ MagCard_t *						MagCardGetData				(void);
 MagCardData_t *					MagCardGetPANData			(void);
 MagCardAdditionalData_t *		MagCardGetAdditionalData	(void);
 MagCardDiscretionaryData_t *	MagCardGetDiscretionaryData	(void);
+
+// Direct Field Access /////////////////////////////////////////////////////////
 
 /**
  * @brief Direct Access to Primary Data Fields
@@ -113,7 +127,6 @@ char *	MagCardGetPVKI			(void);
 char *	MagCardGetPVV			(void);
 char *	MagCardGetCVV			(void);
 char	MagCardGetLRC			(void);
-//bool	MagCardIsValid			(void);
 
 
 /*******************************************************************************

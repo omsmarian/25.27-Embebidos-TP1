@@ -89,6 +89,14 @@ void DisplayWriteNum (uint8_t n1, uint8_t n2, uint8_t n3, uint8_t n4);
 void DisplayWriteString (char * string, uint8_t start);
 
 /**
+ * @brief Write a password to the display
+ * @param position Position to write the number (first digit is 0)
+ * @param number Number to write
+ * @example DisplayWritePassword(2, 5); // Write '--5-' to the display
+ */
+void DisplayWritePassword (uint8_t position, uint8_t number);
+
+/**
  * @brief Clear the display
  * @example DisplayClear(); // Clear the display
  */
