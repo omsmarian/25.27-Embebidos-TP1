@@ -11,6 +11,8 @@
 #include "encoder.h"
 #include "board.h"
 #include "pisr.h"
+#include <stdbool.h>
+#include "fsl_debug_console.h"
 
 
 /*******************************************************************************
@@ -63,6 +65,10 @@ static bool switch_falling_edge;
 static bool long_click_detected;
 static uint8_t press_duration;
 
+
+static bool flag = 0;
+static action_t action = NONE;
+
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -75,7 +81,7 @@ bool encoder_Init(void)
   gpioMode(PIN_ENCODER_RCHB, INPUT_PULLUP);
   gpioMode(PIN_ENCODER_RSWITCH, INPUT_PULLUP);
 
-  pisrRegister(directionCallback, 1);   // 1 ms
+  pisrRegister(directionCallback, 50);   // 1 ms
   pisrRegister(switchCallback, 100);    // 100 ms
 
   return 0;
@@ -84,7 +90,16 @@ bool encoder_Init(void)
 
 action_t encoderRead(void)
 {
-  return direction;
+  PRINTF("%d\n", action);
+  if(flag == 1)
+  {
+	  flag = 0;
+	  return action;
+  }
+  else
+  {
+	  return NONE;
+  }
 }
 /*******************************************************************************
  *******************************************************************************
@@ -101,17 +116,21 @@ static void directionCallback(void)
   encoder_state.RCHA = gpioRead(PIN_ENCODER_RCHA);
   encoder_state.RCHB = gpioRead(PIN_ENCODER_RCHB);
 
-  if (!falling_edge)
+  if (!falling_edge && flag == false)
   {
+	flag = true;
     if (encoder_state.RCHA)
     {
       direction = encoder_state.RCHB ? NONE : LEFT;
       falling_edge = !encoder_state.RCHB;
+      action = LEFT;
+
     }
     else
     {
       direction = encoder_state.RCHB ? RIGHT : NONE;
       falling_edge = encoder_state.RCHB;
+      action = RIGHT;
     }
   }
   else

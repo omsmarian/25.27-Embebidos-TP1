@@ -8,11 +8,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "board.h"
-#include "encoder.h"
-#include "display.h"
-#include "magcard.h"
-//#include "fsl_debug_console.h"
+#include "fsl.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -31,11 +27,13 @@
 
 /* Función que se llama 1 vez, al comienzo del programa */
 void App_Init(void) {
+	init_fsl();
 
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run(void) {
+	update_fsl();
 
 }
 
