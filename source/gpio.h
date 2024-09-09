@@ -41,15 +41,25 @@
 #endif // LOW
 
 // Manual Write
-#define SETB_ADDRS			(0x400FF044u)
+#define SETB_ADDRS			(0x400FF084u)
 #define SETB_PTR			((uint32_t *)SETB_ADDRS)
 #define SETB_VAL			(1<<9)
 
-#define CLRB_ADDRS			(0x400FF048u)
+#define CLRB_ADDRS			(0x400FF088u)
 #define CLRB_PTR			((uint32_t *)CLRB_ADDRS)
 #define CLRB_VAL			(1<<9)
 #define DEBUG_TP_SET		*(SETB_PTR) = SETB_VAL
 #define DEBUG_TP_CLR		*(CLRB_PTR) = CLRB_VAL
+
+#define SETD_ADDRS			(0x400FF084u)
+#define SETD_PTR			((uint32_t *)SETD_ADDRS)
+#define SETD_VAL			(1<<5)
+
+#define CLRD_ADDRS			(0x400FF088u)
+#define CLRD_PTR			((uint32_t *)CLRD_ADDRS)
+#define CLRD_VAL			(1<<5)
+#define DEBUG_TP_SET_D		*(SETD_PTR) = SETD_VAL
+#define DEBUG_TP_CLR_D		*(CLRD_PTR) = CLRD_VAL
 
 
 /*******************************************************************************

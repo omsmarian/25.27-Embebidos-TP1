@@ -40,6 +40,7 @@ int main(void) {
 	hw_Init();
     hw_DisableInterrupts();
 
+	MY_PRINTF("Starting the program\n");
 	init_fsl();
 
 
@@ -47,7 +48,6 @@ int main(void) {
     hw_EnableInterrupts();
 
 
-	MY_PRINTF("Starting the program\n");
 
 
 

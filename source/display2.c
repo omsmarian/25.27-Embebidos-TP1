@@ -16,6 +16,8 @@
 #include "macros.h"
 
 
+#include "fsl_debug_console.h"
+
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -112,6 +114,9 @@ const uint8_t _digits [] = { PIN_DISPLAY_SEL1,
 static uint8_t _buffer[DISPLAY_DIGITS];
 // static uint8_t _index = 0;
 static int8_t _brightness = DISPLAY_MAX_BRIGHTNESS;
+
+
+static uint16_t _counterSlide = 0;
 
 
 /*******************************************************************************
@@ -216,6 +221,13 @@ void DisplayWriteString (char * string, uint8_t start)
 static void RefreshDisplay (void)
 {
 	static uint8_t _index = 0, _count = 0;
+	if (!(++_counterSlide % 100))
+		{
+			_counterSlide = 0;
+			_index++;
+			if(_buffer[_index]=='\0')
+				_index = 0;
+		}
 	uint8_t character = _characters[_buffer[_index]];
 
 	if (((_count + 1) % DISPLAY_MAX_BRIGHTNESS) >=  _brightness) // PWM

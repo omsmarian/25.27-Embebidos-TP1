@@ -131,7 +131,7 @@ bool gpioRead (pin_t pin)
 
 __ISR__ PORTA_IRQHandler (void)
 {
-	DEBUG_TP_SET;
+//	DEBUG_TP_SET_D;
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTA->ISFR, i))
 		{
@@ -139,12 +139,12 @@ __ISR__ PORTA_IRQHandler (void)
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	DEBUG_TP_SET;
+//	DEBUG_TP_CLR_D;
 }
 
 __ISR__ PORTB_IRQHandler (void)
 {
-	DEBUG_TP_SET;
+//	DEBUG_TP_SET_D;
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTB->ISFR, i))
 		{
@@ -152,12 +152,12 @@ __ISR__ PORTB_IRQHandler (void)
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	DEBUG_TP_SET;
+//	DEBUG_TP_CLR_D;
 }
 
 __ISR__ PORTC_IRQHandler (void)
 {
-	DEBUG_TP_SET;
+//	DEBUG_TP_SET_D;
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTC->ISFR, i))
 		{
@@ -165,12 +165,12 @@ __ISR__ PORTC_IRQHandler (void)
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	DEBUG_TP_SET;
+//	DEBUG_TP_CLR_D;
 }
 
 __ISR__ PORTD_IRQHandler (void)
 {
-	DEBUG_TP_SET;
+//	DEBUG_TP_SET_D;
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTD->ISFR, i))
 		{
@@ -178,12 +178,12 @@ __ISR__ PORTD_IRQHandler (void)
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	DEBUG_TP_SET;
+//	DEBUG_TP_CLR_D;
 }
 
 __ISR__ PORTE_IRQHandler (void)
 {
-	DEBUG_TP_SET;
+//	DEBUG_TP_SET_D;
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTE->ISFR, i))
 		{
@@ -191,7 +191,7 @@ __ISR__ PORTE_IRQHandler (void)
 			if(irqFuns[i] != NULL)
 				irqFuns[i]();
 		}
-	DEBUG_TP_SET;
+//	DEBUG_TP_CLR_D;
 }
 
 

@@ -49,16 +49,16 @@ void init_fsl()
     print_menu(state);
     DisplaySetBrightness(100);
 
-
+    gpioMode(PIN_TP_PER, OUTPUT);
+    gpioMode(PIN_TP_DED, OUTPUT);
 
 
 }
 
 void update_fsl()
 {
-	update_menu();
-	manage_access();
-	MagCardClearData();
+	update_menu(); // Update the menu
+	manage_access(); //Manage access
 }
 
 
@@ -110,11 +110,11 @@ void print_menu(enum states_fsl state) {
 	MY_PRINTF("\n");
     switch (state) {
     case ADD_USER:
-    	DisplayWriteChar("ADD ");
+    	DisplayWriteChar("ADD USER");
         MY_PRINTF(">> Add User\n   Delete User\n   Change Password\n   Access System\n   Brightness\n");
         break;
     case DELETE_USER:
-        DisplayWriteChar("DELE");
+        DisplayWriteChar("DEL ");
         MY_PRINTF("   Add User\n>> Delete User\n   Change Password\n   Access System\n   Brightness\n");
         break;
     case CHANGE_PASSWORD:
@@ -751,7 +751,7 @@ void access_system_call(void)
 	else
 	{
 		MY_PRINTF("Access denied\n");
-		DisplayWriteChar("ERRO");
+		DisplayWriteChar("ERR ");
 		if (error_flag == false) {
 			error_flag = true;
 			timer_error = timerStart(TIMER_MS2TICKS(5000));

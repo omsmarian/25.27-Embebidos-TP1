@@ -70,6 +70,10 @@
 #define PIN_MAGCARD_CLOCK		PORTNUM2PIN(PA, 1)	// PTA1
 #define PIN_MAGCARD_DATA		PORTNUM2PIN(PB, 9)	// PTB23
 
+
+#define PIN_TP_PER				PORTNUM2PIN(PC, 9)
+#define PIN_TP_DED              PORTNUM2PIN(PC, 5)
+
 /*******************************************************************************
  ******************************************************************************/
 

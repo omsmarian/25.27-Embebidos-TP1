@@ -21,6 +21,9 @@
 #include "magcard.h"
 #include "LEDs.h"
 #include "timer.h"
+#include "gpio.h"
+#include "board.h"
+
 
 
 static bool access_flag = false;

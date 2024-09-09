@@ -11,7 +11,6 @@
 #include "magcard.h"
 #include "board.h"
 #include "gpio.h"
-//#include "pisr.h"
 #include "macros.h"
 
 
@@ -67,7 +66,7 @@ static MagCardState_t	FSM				(MagCardEvent_t event);
 static bool				Init			(void);
 static void				ReadEnable		(void);
 static void				ReadClock		(void);
-static void				ReadBit			(void);
+static void				ReadData		(void);
 static bool				CheckParity		(void);
 static void				ParseData		(void);
 static void				MagCardCpy		(MagCard_t * dest, MagCard_t * src);
@@ -87,11 +86,15 @@ static void				__ArrayCpy__	(char dest[], char src[], uint8_t length);
 static bool				track2[MAX_TRACK_SIZE + 1]; // + 1 in case the data is longer than MAX_TRACK_SIZE (the rest is ignored, index is capped)
 static uint8_t			track2_length;
 static uint8_t			index;
-//static bool			data[40][4]; // Another way to store data, easier to access and check
 
 static MagCard_t		magCard;
 static MagCard_t		magCardBuffer; // Prevents data corruption from user
 static MagCardState_t	state;
+
+static const MagCard_t	magCardClr = { .data = { .PAN = { 0 }, .PAN_length = 0 },
+									   .additional_data = { .expiration = { 0 }, .service_code = { 0 } },
+									   .discretionary_data = { .PVKI = { 0 }, .PVV = { 0 }, .CVV = { 0 } },
+									   .LRC = 0 };
 
 
 /*******************************************************************************
@@ -102,7 +105,6 @@ static MagCardState_t	state;
 
 // Primary Driver Services /////////////////////////////////////////////////////
 
-//bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == DATA_READY; }
 bool							MagCardInit					(void) { return !FSM(INIT); } // OFF: 0
 bool							MagCardGetStatus			(void) { return FSM(GET_STATUS) == DATA_READY; }
 uint64_t						MagCardGetCardNumber		(void) { return __CharsToNum__(magCard.data.PAN, magCard.data.PAN_length); }
@@ -125,7 +127,6 @@ char *							MagCardGetPVKI				(void) { return magCardBuffer.discretionary_data.
 char *							MagCardGetPVV				(void) { return magCardBuffer.discretionary_data.PVV; }
 char *							MagCardGetCVV				(void) { return magCardBuffer.discretionary_data.CVV; }
 char							MagCardGetLRC				(void) { return magCardBuffer.LRC; }
-// bool							MagCardIsValid				(void) { return magCardBuffer.valid; }
 
 
 /*******************************************************************************
@@ -139,66 +140,27 @@ static MagCardState_t FSM (MagCardEvent_t event)
 	switch (state)
 	{
 		case OFF:
-			if (event == INIT && Init()) { state = IDLE; }
+				 if (event == INIT && Init())		{ state = IDLE; }
 			break;
 
 		case IDLE:
-			if (event == ENABLE_FallingEdge) { (state = WAITING_SS) && (index = 0); }
-			break;
-
-		case WAITING_SS: // Same as READING but without storing data (only SS if found)
-			if (event == CLOCK_FallingEdge)
-			{
-				static char buffer = 0;
-				ReadBit();
-				BITROLL_RIGHT(buffer, track2[0]);
-				if (buffer == START_SENTINEL) // Search for SS
-				{
-					state = READING;
-					for (uint8_t i = 0; i < CHAR_LENGTH; i++)
-						track2[i] = buffer & (1 << i);
-					buffer = 0;
-					index = CHAR_LENGTH;
-				}
-				else
-					index = 0;
-			}
-			else if (event == ENABLE_RisingEdge) { state = IDLE; }
+				 if (event == ENABLE_FallingEdge)	{ (state = READING) && (index = 0); }
 			break;
 
 		case READING:
-			if (event == CLOCK_FallingEdge)
-			{
-				ReadBit();
-				CAP(index, 0, MAX_TRACK_SIZE);
-			}
-			else if (event == ENABLE_RisingEdge) { state = PROCESSING; }
+				 if (event == CLOCK_FallingEdge)	{ ReadData(); }
+			else if (event == ENABLE_RisingEdge)	{ state = PROCESSING; }
 			break;
 
 		case PROCESSING:
-			if (event == GET_STATUS) // Check if data is ready
-			{
-				uint8_t i = 0, buffer = 0;
-				for (i++; i < MAX_CHARS && __Bits2Char__(track2 + i * DATA_LENGTH) != FIELD_SEPARATOR; i++); // Search for FS
-				magCard.data.PAN_length = i - 1; // SS and FS not included
-				for (i++; i < MAX_CHARS && __Bits2Char__(track2 + i * DATA_LENGTH) != END_SENTINEL; i++); // Search for ES
-				track2_length = (i + 2) * DATA_LENGTH; // LRC included
-
-				if (magCard.data.PAN_length <= MAX_PAN_LENGTH && i < MAX_CHARS && CheckParity())
-				{
-					ParseData();
-					state = DATA_READY;
-				}
-				else
-					state = IDLE;
-			}
-			else if (event == ENABLE_FallingEdge) { (state = WAITING_SS) && (index = 0); }
-			else if (event == CLEAR_DATA) { (state = IDLE) && MagCardClr(); }
+				 if (event == GET_STATUS)			{ state = (ProcessData()) ? DATA_READY : IDLE; }
+			else if (event == ENABLE_FallingEdge)	{ (state = WAITING_SS) && (index = 0); }
+			else if (event == CLEAR_DATA)			{ (state = IDLE) && MagCardClr(); }
 			break;
 
 		case DATA_READY:
-				 if (event == ENABLE_FallingEdge) { (state = WAITING_SS) && (index = 0); }
-			else if (event == CLEAR_DATA) { (state = IDLE) && MagCardClr(); }
+				 if (event == ENABLE_FallingEdge)	{ (state = WAITING_SS) && (index = 0); }
+			else if (event == CLEAR_DATA)			{ (state = IDLE) && MagCardClr(); }
 			break;
 
 		default:
@@ -224,15 +186,69 @@ static bool Init (void)
 	return status;
 }
 
-static void ReadEnable  (void) {
-	DEBUG_TP_SET_D;
-	FSM(!gpioRead(PIN_MAGCARD_ENABLE) ? ENABLE_FallingEdge : ENABLE_RisingEdge);
-    DEBUG_TP_CLR_D; }
-static void ReadClock   (void) {
-	DEBUG_TP_SET;
-	FSM(CLOCK_FallingEdge);
-	DEBUG_TP_CLR; }
-static void ReadBit     (void) { track2[index++] = !gpioRead(PIN_MAGCARD_DATA); } // Data is inverted
+static void ReadEnable  (void) { FSM(!gpioRead(PIN_MAGCARD_ENABLE) ? ENABLE_FallingEdge : ENABLE_RisingEdge); }
+static void ReadClock   (void) { FSM(CLOCK_FallingEdge); }
+
+static void ReadData ()
+{
+	static bool start = false;
+	static char buffer = 0;
+
+	if (!index)
+		start = false; // In case another swipe is made
+	track2[index++] = !gpioRead(PIN_MAGCARD_DATA); // Data is inverted
+
+	if (!start) // Search for SS
+	{
+		BITROLL_RIGHT(buffer, track2[0]);
+		if (buffer == START_SENTINEL)
+		{
+			start = true;
+			for (uint8_t i = 0; i < CHAR_LENGTH; i++)
+				track2[i] = buffer & (1 << i);
+			buffer = 0;
+			index = DATA_LENGTH;
+		}
+		index--; // Starts again: index = 0, Reads SS parity: index = CHAR_LENGTH
+	}
+
+	CAP(index, 0, MAX_TRACK_SIZE);
+}
+
+static bool ProcessData (void)
+{
+	uint8_t i = 0, buffer = 0;
+	do { buffer = __Bits2Char__(track2 + i * DATA_LENGTH); }
+	while (i++ < MAX_TRACK_SIZE && buffer != FIELD_SEPARATOR); // Search for FS
+	magCard.data.PAN_length = i - 2; // SS and FS not included
+	if (buffer == FIELD_SEPARATOR && magCard.data.PAN_length <= MAX_PAN_LENGTH)
+	{
+		while (i++ < MAX_CHARS && __Bits2Char__(track2 + i * DATA_LENGTH) != END_SENTINEL)
+		{
+			uint8_t a = __Bits2Char__(track2 + i * DATA_LENGTH); // Search for ES
+			if (a == END_SENTINEL || i == 37)
+				buffer = 3;
+		}
+
+		if(i < MAX_CHARS) // LRC included
+		{
+			track2_length = (i + 1) * DATA_LENGTH;
+			
+			if (CheckParity())
+			{
+				ParseData();
+				MagCardCpy(&magCardBuffer, &magCard);
+				state = DATA_READY;
+			}
+			else
+				state = IDLE;
+		}
+		else
+			state = IDLE;
+	}
+	else
+		state = IDLE;
+}
 
 static bool CheckParity (void)
 {
@@ -271,8 +287,6 @@ static void ParseData (void)
 	i = __StoreChar__(i, magCard.discretionary_data.PVV,		PVV_LENGTH);
 	i = __StoreChar__(i, magCard.discretionary_data.CVV,		CVV_LENGTH) + DATA_LENGTH; // Skip ES
 	i = __StoreChar__(i, &magCard.LRC,							LRC_LENGTH);
-
-	MagCardCpy(&magCardBuffer, &magCard);
 }
 
 static void MagCardCpy (MagCard_t * dest, MagCard_t * src)
@@ -292,12 +306,8 @@ static void MagCardCpy (MagCard_t * dest, MagCard_t * src)
 static bool MagCardClr (void)
 {
 #ifdef HARD_CLEAR
-	magCard.data.PAN_length = 0;
-
-	char buffer[MAX_CHARS] = {0};
-	MagCardCpy(&magCard, buffer);
-
-	magCard.LRC = 0;
+	for (uint8_t i = 0; i < MAX_TRACK_SIZE; i++)
+		track2[i] = 0;
 
 	MagCardCpy(&magCardBuffer, &magCard);
 #endif
