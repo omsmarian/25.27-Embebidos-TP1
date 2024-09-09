@@ -21,7 +21,8 @@
 #define SPIN_FREQ 1000U
 #define CLICK_FREQ 20U
 #define LONG_CLICK_THRESHOLD 10
-
+#define DOUBLE_CLICK_THRESHOLD 15 // Define el umbral para el doble clic
+#define MIN_TIME_BETWEEN_CLICKS 5 // Define el tiempo mínimo entre clics para un doble clic
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -64,6 +65,11 @@ static bool falling_edge;
 static bool switch_falling_edge;
 static bool long_click_detected;
 static uint8_t press_duration;
+static uint8_t click_count = 0; // Contador de clics
+static uint8_t click_timer = 0; // Temporizador de clics
+static uint8_t time_since_last_click = 0; // Tiempo desde el último clic
+static bool click_detected = false; // Variable para detectar si se ha registrado un clic
+
 
 /*******************************************************************************
  *******************************************************************************
@@ -135,13 +141,7 @@ static void directionCallback(void)
 
 
 
-#define DOUBLE_CLICK_THRESHOLD 15 // Define el umbral para el doble clic
-#define MIN_TIME_BETWEEN_CLICKS 5 // Define el tiempo mínimo entre clics para un doble clic
 
-static uint8_t click_count = 0; // Contador de clics
-static uint8_t click_timer = 0; // Temporizador de clics
-static uint8_t time_since_last_click = 0; // Tiempo desde el último clic
-static bool click_detected = false; // Variable para detectar si se ha registrado un clic
 
 static void switchCallback(void)
 {
@@ -181,7 +181,7 @@ static void switchCallback(void)
           }
       }
       long_click_detected = false;
-      click_detected = false; // Reiniciar la detección de clics
+      click_detected = false;
     }
   }
   if (click_timer > 0)
@@ -200,7 +200,5 @@ static void switchCallback(void)
       }
   }
 }
-
-//   Decrementa el temporizador de clics y registra un solo clic si el temporizador llega a 0
 
 /******************************************************************************/
