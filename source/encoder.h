@@ -14,28 +14,6 @@
 #include <stdbool.h>
 #include "gpio.h"
 
-
-/*******************************************************************************
- * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
- ******************************************************************************/
-
-/***** ENCODER defines ********************************************************/
-
-//// Encoder
-//#define PIN_ENCODER_RCHA		PORTNUM2PIN(PB, 9)	// PTC12
-//#define PIN_ENCODER_RCHB		PORTNUM2PIN(PA, 1)	// PTC4
-//#define PIN_ENCODER_RSWITCH		PORTNUM2PIN(PB, 23) // PTD0
-// Encoder
-#define PIN_ENCODER_RCHA		PORTNUM2PIN(PE, 24)	// PTC12
-#define PIN_ENCODER_RCHB		PORTNUM2PIN(PE, 25)	// PTC4
-#define PIN_ENCODER_RSWITCH		PORTNUM2PIN(PE, 26) // PTD0
-
-// LEDs
-#define PIN_LED_RED				PORTNUM2PIN(PB, 22)	// PTB22
-#define PIN_LED_GREEN			PORTNUM2PIN(PE, 26)	// PTE26
-#define PIN_LED_BLUE			PORTNUM2PIN(PB, 21)	// PTB21
-
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
